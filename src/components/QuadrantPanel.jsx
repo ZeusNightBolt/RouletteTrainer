@@ -1,0 +1,78 @@
+import React from "react";
+import { WHEELS } from "../wheels.js";
+import { CHI2_CRIT_95, CHI2_CRIT_99 } from "../engine.js";
+
+const Q_CLASS = ["q1", "q2", "q3", "q4"];
+
+export default function QuadrantPanel({ wheelKey, stats, history, chi2 }) {
+  const N = history.length;
+  const wheel = WHEELS[wheelKey];
+  const strip = history.slice(-20);
+
+  const chiVerdict =
+    N < 20
+      ? `need ≥20 spins for a meaningful test (${N} so far)`
+      : chi2 > CHI2_CRIT_99
+      ? "outside 99% band — interesting, but 1-in-100 sessions do this on a fair wheel"
+      : chi2 > CHI2_CRIT_95
+      ? "outside 95% band — 1-in-20 fair sessions look like this by design"
+      : "consistent with a fair wheel";
+
+  return (
+    <div className="card qpanel">
+      <div className="qpanel-head">
+        <div className="card-title">Quadrant telemetry — {N.toLocaleString()} spins</div>
+        <div className="qpanel-note">Descriptive only. P(each quadrant) is fixed every spin, whatever the drought.</div>
+      </div>
+
+      <div className="qcards">
+        {stats.map((s, k) => (
+          <div key={s.id} className={"qcard " + Q_CLASS[k]}>
+            <div className="qcard-top">
+              <span className="qcard-id">{s.id}</span>
+              <span className="qcard-p">
+                {s.m} pkts · {(100 * s.p).toFixed(2)}%
+              </span>
+              {s.drought >= 10 && <span className="cold-badge">COLD {s.drought}</span>}
+            </div>
+            <div className="qcard-drought">
+              <span className="big">{s.drought}</span>
+              <span className="unit">spins dry</span>
+            </div>
+            <div className="qcard-row">
+              <span>
+                hits <b>{s.hits}</b> / exp {s.expected.toFixed(1)}
+              </span>
+              <span>
+                share <b>{N ? (100 * s.share).toFixed(1) : "—"}%</b>
+              </span>
+            </div>
+            <div className="qcard-row dim">
+              <span>max drought {s.maxDrought}</span>
+              <span>P(10-dry) {(100 * s.pDry10).toFixed(1)}%</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="strip">
+        <span className="strip-label">last 20</span>
+        <div className="strip-cells">
+          {strip.length === 0 && <span className="strip-empty">—</span>}
+          {strip.map((h, i) => (
+            <span key={N - strip.length + i} className={"strip-cell " + Q_CLASS[h.q]} title={`${h.n} · ${wheel.quadrants[h.q].id}`}>
+              {h.n}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div className="chi">
+        <span>
+          χ² vs fair split = <b>{N ? chi2.toFixed(2) : "—"}</b> <em>(df 3 · 95% crit {CHI2_CRIT_95} · 99% crit {CHI2_CRIT_99})</em>
+        </span>
+        <span className="chi-verdict">{chiVerdict}</span>
+      </div>
+    </div>
+  );
+}
