@@ -34,7 +34,7 @@
 
 ```bash
 npm install
-npm run verify    # 69-assertion gate (~10 s)
+npm run verify    # 79-assertion gate (~10 s)
 npm run dev       # Vite dev server
 npm run build     # production bundle → dist/
 npm run preview   # serve dist/
@@ -48,15 +48,17 @@ src/main.jsx                  entry
 src/App.jsx                   state (wheel, bets + undo stack, bankroll, history, log)
                               + viewport-fit layout: wheel console left, tabbed panel right
 src/wheels.js                 wheel data + quadrant helpers (SOURCE OF TRUTH)
-src/engine.js                 RNG, spin, resolve, betEV, quadrantStats, colorStats,
-                              chiSquare, simulateStrategies, pnlStats
+src/engine.js                 RNG, spin, parseSequence, resolve, betEV, quadrantStats,
+                              colorStats, chiSquare, simulateStrategies, pnlStats
 src/components/Wheel.jsx      SVG wheel AS betting surface (pockets = straight-up,
-                              outer ring = sector) + drought ring + hub readout
+                              outer ring = sector) + drought ring + hub + ball-orbit anim
 src/components/BetConsole.jsx chip selector + undo/clear, docked at the wheel
 src/components/OutsideBets.jsx evens/dozens/columns/basket strip under the wheel
+src/components/ResultsTicker.jsx  recent-numbers marquee (top of wheel col + Analyze tab)
 src/components/Board.jsx      classic felt (Table tab) — same shared bet state
-src/components/QuadrantPanel.jsx  4 quadrant cards, color/streak bar, last-20 strip, live χ²
+src/components/QuadrantPanel.jsx  4 quadrant cards, color/streak bar, live χ² (strip extracted)
 src/components/SessionAnalytics.jsx  equity curve (realized vs exact-EV), P&L / edge / streak tiles
+src/components/SequenceAnalyzer.jsx  Analyze tab: paste numbers → parseSequence → QuadrantPanel
 src/components/FallacyLab.jsx 100k-spin cold/fixed/random comparison
 src/styles.css                full theme
 test/verify.js                CI gate
@@ -68,6 +70,8 @@ docs/RESEARCH.md              literature + detection-cost math, all citations
 
 - Biased-wheel sandbox: hidden quadrant weights + "detect it with χ² before the budget runs
   out" game, teaching the §3 detection-cost lesson interactively.
-- CSV spin-log import to run the χ² and drought stats on real logged sessions.
+- CSV/file spin-log import — the Analyze tab (paste comma/space/newline results → full
+  quadrant + colour + χ² breakdown via `parseSequence`) covers the paste case; a file/CSV
+  uploader on top of it is the remaining bit.
 - EU racetrack call bets (voisins/tiers/orphelins) — data already in `wheels.js` with
   invariants tested; needs resolution + edge assertions + UI.

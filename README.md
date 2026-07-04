@@ -5,14 +5,18 @@
 A dark-theme React trainer for double-zero (Atlantic City rules) and single-zero roulette, built
 around one question: **do wheel-quadrant droughts carry any tradeable information?**
 
-The app is a single-viewport betting console built around the wheel: pockets take straight-up
-bets, the outer ring takes sector bets, and a docked strip handles chips, undo/clear, and every
-outside bet (red/black, odd/even, high/low, dozens, columns, basket). Everything else lives in
-tabs beside the wheel — live per-quadrant **and per-color** telemetry (drought, hit share, streak,
-χ² vs. fair), a **Session Analytics** view that plots your realized bankroll against the *exact*
-expected-value line, the classic AC felt as a synced **Table** view, and a **Fallacy Lab** that
-runs 100,000 spins in-browser pitting *bet-the-coldest-quadrant* against *bet-a-fixed-quadrant*
-and *bet-at-random* on the **same spins**.
+The app is a single-viewport betting console built around an animated wheel: pockets take
+straight-up bets, the outer ring takes sector bets, a docked strip handles chips, undo/clear, and
+every outside bet (red/black, odd/even, high/low, dozens, columns, basket), and a recent-results
+ticker runs along the top. Everything else lives in tabs beside the wheel:
+
+- **Telemetry** — live per-quadrant **and per-color** stats (drought, hit share, streak, χ² vs. fair).
+- **Analytics** — your realized bankroll plotted against the *exact* expected-value line.
+- **Analyze** — paste any comma/space/newline-separated list of results and get the full quadrant +
+  color + χ² breakdown of that sequence (audit a real logged session; `00` supported on the 00 wheel).
+- **Table** — the classic AC felt, synced to the same bets.
+- **Fallacy Lab** — 100,000 spins in-browser pitting *bet-the-coldest-quadrant* against
+  *bet-a-fixed-quadrant* and *bet-at-random* on the **same spins**.
 
 The answer — verified in CI on every deploy — is no.
 
@@ -94,13 +98,15 @@ every Pages deploy — if any payout, wheel datum, or the fallacy null drifts, t
 ```
 src/wheels.js      source of truth: pocket sequences, quadrant arcs, French call bets
 src/engine.js      pure engine (no DOM): crypto RNG w/ rejection sampling, bet resolution,
-                   exact bet EV (betEV), quadrant stats, χ², strategy simulator, session P&L (pnlStats)
-test/verify.js     CI gate: 69 assertions — exact data invariants, MC edges vs theory,
-                   gambler's-fallacy null, closed-form EV, session-analytics + color rollups
+                   exact bet EV (betEV), sequence parser (parseSequence), quadrant/color stats,
+                   χ², strategy simulator, session P&L (pnlStats)
+test/verify.js     CI gate: 79 assertions — exact data invariants, MC edges vs theory,
+                   gambler's-fallacy null, closed-form EV, session-analytics + color +
+                   sequence-parser rollups
 src/App.jsx        state + wiring, undo stack, viewport-fit tabbed layout
-src/components/    Wheel (bettable SVG + telemetry ring), BetConsole (chips/undo/clear),
-                   OutsideBets (evens/dozens/columns/basket), Board (Table tab),
-                   QuadrantPanel, SessionAnalytics (equity curve), FallacyLab
+src/components/    Wheel (bettable SVG + ball-orbit anim), BetConsole (chips/undo/clear),
+                   OutsideBets, ResultsTicker (recent-numbers marquee), Board (Table tab),
+                   QuadrantPanel, SessionAnalytics, SequenceAnalyzer (Analyze tab), FallacyLab
 ```
 
 Design constraints: the live table uses `crypto.getRandomValues` with rejection sampling

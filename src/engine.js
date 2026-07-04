@@ -56,6 +56,33 @@ export function spin(wheelKey, rand) {
   return { wheelKey, idx, n, color: colorOf(n), q: quadrantIndexOf(wheelKey, idx) };
 }
 
+// --- Manual sequence parsing --------------------------------------------------
+//
+// Turn a free-typed list of results ("0, 00, 7 14 27 …" — commas, spaces, or
+// newlines) into the same { n, idx, q, color } history records the live table
+// produces, so quadrantStats / colorStats / chiSquare run on real logged data
+// unchanged. Tokens are normalized (leading zeros stripped, "00" kept literal);
+// anything not a pocket on the chosen wheel is returned in `invalid`, never
+// silently dropped. Pure and history-blind — it only classifies what it's given.
+export function parseSequence(wheelKey, input) {
+  const wheel = WHEELS[wheelKey];
+  const posOf = new Map(wheel.seq.map((n, i) => [n, i]));
+  const tokens = String(input).split(/[\s,]+/).filter(Boolean);
+  const history = [];
+  const invalid = [];
+  for (const t of tokens) {
+    // "00" is literal; otherwise require a clean non-negative integer token
+    const norm = t === "00" ? "00" : /^\d+$/.test(t) ? String(parseInt(t, 10)) : t;
+    if (posOf.has(norm)) {
+      const idx = posOf.get(norm);
+      history.push({ n: norm, idx, q: quadrantIndexOf(wheelKey, idx), color: colorOf(norm) });
+    } else {
+      invalid.push(t);
+    }
+  }
+  return { history, invalid, count: history.length, total: tokens.length };
+}
+
 // --- Bet resolution ---------------------------------------------------------
 //
 // bets: plain object { key: amount }. Keys:
