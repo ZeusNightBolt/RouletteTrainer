@@ -45,6 +45,7 @@ npm run preview   # serve dist/
 ```
 index.html                    dark-root shell, fonts
 src/main.jsx                  entry
+src/ui.js                     shared UI constants + formatters (Q_CLASS, CHIPS, fmt/signed/pct)
 src/App.jsx                   state (wheel, bets + undo stack, bankroll, history, log)
                               + viewport-fit layout: wheel console left, tabbed panel right
 src/wheels.js                 wheel data + quadrant helpers (SOURCE OF TRUTH)

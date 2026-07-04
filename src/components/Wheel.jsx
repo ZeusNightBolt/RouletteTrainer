@@ -170,6 +170,20 @@ export default function Wheel({ wheelKey, lastIdx, stats, bets = {}, onBet, spin
         </g>
       )}
 
+      {/* winning-pocket highlight — a gold outline that lights up and pulses
+          once the ball settles (delayed by the spin duration in CSS). */}
+      {lastIdx != null && (
+        <path
+          key={"hl" + spinId}
+          className="pocket-highlight"
+          d={annular(R_IN - 1, R_OUT + 1, lastIdx * step - step / 2, lastIdx * step + step / 2)}
+          fill="none"
+          stroke="var(--gold)"
+          strokeWidth="3.5"
+          pointerEvents="none"
+        />
+      )}
+
       {/* hub readout */}
       <circle cx={C} cy={C} r={R_HUB} fill="url(#hubGrad)" stroke="var(--line)" strokeWidth="1.5" />
       <circle cx={C} cy={C} r={R_HUB - 10} fill="none" stroke="var(--line)" strokeWidth="0.75" opacity="0.6" />

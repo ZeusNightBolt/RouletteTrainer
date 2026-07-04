@@ -1,6 +1,5 @@
 import React from "react";
-
-const CHIPS = [1, 5, 25, 100, 500];
+import { CHIPS } from "../ui.js";
 
 // Chip selector + undo/clear, docked at the wheel so every betting action
 // happens in one place. Undo pops the last bet edit since the previous spin.

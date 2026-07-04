@@ -354,32 +354,54 @@ button:focus-visible {
 .ticker-cell.c-red { color: #ff6d5f; }
 .ticker-cell.c-black { color: var(--bone); }
 .ticker-cell.c-green { color: #3bda8d; }
-.ticker-cell.fresh {
-  animation: tickPop 0.5s cubic-bezier(0.16, 0.7, 0.3, 1) both;
-}
+/* .ticker-cell.fresh animation is defined in the animations block below */
 
 /* --- animations -------------------------------------------------------------- */
 
+/* single knob for the whole spin sequence; the hub reveal and result highlight
+   are timed as fractions of it so the choreography stays in sync if it changes */
+:root {
+  --spin-dur: 2.6s;
+}
+
+/* the ball makes several full turns and eases to a long, natural stop */
 @keyframes ballLand {
-  from { transform: rotate(calc(var(--land) - 1440deg)); }
+  from { transform: rotate(calc(var(--land) - 1800deg)); }
   to { transform: rotate(var(--land)); }
 }
 .ball-orbit {
-  animation: ballLand 1.15s cubic-bezier(0.12, 0.62, 0.22, 1) both;
+  animation: ballLand var(--spin-dur) cubic-bezier(0.1, 0.72, 0.16, 1) both;
 }
 @keyframes hubPop {
-  0% { opacity: 0; transform: scale(0.6); }
-  60% { transform: scale(1.08); }
+  0% { opacity: 0; transform: scale(0.55); }
+  70% { transform: scale(1.1); }
   100% { opacity: 1; transform: scale(1); }
 }
+/* the result number grows in as the ball is on its final, slow approach */
 .hub-number.pop {
   transform-box: fill-box;
   transform-origin: center;
-  animation: hubPop 0.85s 0.35s cubic-bezier(0.16, 0.7, 0.3, 1) both;
+  animation: hubPop 1s calc(var(--spin-dur) * 0.55) cubic-bezier(0.16, 0.7, 0.3, 1) both;
+}
+/* winning pocket lights up the instant the ball settles, then pulses twice */
+@keyframes pocketFlash {
+  0% { opacity: 0; }
+  8% { opacity: 1; }
+  40% { opacity: 0.35; }
+  60% { opacity: 1; }
+  100% { opacity: 0.9; }
+}
+.pocket-highlight {
+  filter: drop-shadow(0 0 5px var(--gold));
+  animation: pocketFlash 1.5s calc(var(--spin-dur) - 0.2s) ease-out both;
 }
 @keyframes tickPop {
   from { opacity: 0; transform: translateY(-6px) scale(0.82); }
   to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.ticker-cell.fresh {
+  /* newest cell waits for the ball to land, then pops in with the result */
+  animation: tickPop 0.5s calc(var(--spin-dur) - 0.1s) cubic-bezier(0.16, 0.7, 0.3, 1) both;
 }
 @keyframes paneIn {
   from { opacity: 0; transform: translateY(8px); }
@@ -388,9 +410,11 @@ button:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .ball-orbit,
   .hub-number.pop,
+  .pocket-highlight,
   .ticker-cell.fresh,
   .tab-pane:not([hidden]) {
-    animation: none;
+    animation-duration: 0.01ms;
+    animation-delay: 0s;
   }
 }
 
