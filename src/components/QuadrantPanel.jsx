@@ -1,7 +1,6 @@
 import React from "react";
 import { CHI2_CRIT_95, CHI2_CRIT_99 } from "../engine.js";
-
-const Q_CLASS = ["q1", "q2", "q3", "q4"];
+import { Q_CLASS } from "../ui.js";
 
 export default function QuadrantPanel({ wheelKey, stats, cstats, history, chi2, titleOverride }) {
   const N = history.length;

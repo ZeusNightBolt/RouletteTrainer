@@ -1,7 +1,6 @@
 import React from "react";
 import { WHEELS } from "../wheels.js";
-
-const Q_CLASS = ["q1", "q2", "q3", "q4"];
+import { Q_CLASS } from "../ui.js";
 
 // Recent-results marquee. Newest first, color-inked numbers with a
 // quadrant-colored underline. The first cell pops in when a new result lands

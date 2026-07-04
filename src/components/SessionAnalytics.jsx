@@ -1,9 +1,5 @@
 import React, { useMemo } from "react";
-
-const fmt = (n) =>
-  (n < 0 ? "−$" : "$") + Math.abs(Math.round(n * 100) / 100).toLocaleString("en-US", { maximumFractionDigits: 2 });
-const signed = (n) => (n >= 0 ? "+" : "−") + Math.abs(Math.round(n * 100) / 100).toLocaleString("en-US");
-const pct = (n) => (n >= 0 ? "+" : "−") + Math.abs(n).toFixed(2) + "%";
+import { fmt, signed, pct } from "../ui.js";
 
 // Cumulative-net equity curve. Two series on one frame:
 //   realized  — the bankroll grind (solid, gold up / cold down by final sign)

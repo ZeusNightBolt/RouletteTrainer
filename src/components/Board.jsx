@@ -1,7 +1,6 @@
 import React from "react";
 import { WHEELS, RED, quadrantSize } from "../wheels.js";
-
-const Q_CLASS = ["q1", "q2", "q3", "q4"];
+import { Q_CLASS } from "../ui.js";
 
 function ChipBadge({ amount }) {
   if (!amount) return null;
