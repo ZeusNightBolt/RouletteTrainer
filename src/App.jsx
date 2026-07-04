@@ -5,9 +5,11 @@ import Wheel from "./components/Wheel.jsx";
 import Board from "./components/Board.jsx";
 import BetConsole from "./components/BetConsole.jsx";
 import OutsideBets from "./components/OutsideBets.jsx";
+import ResultsTicker from "./components/ResultsTicker.jsx";
 import QuadrantPanel from "./components/QuadrantPanel.jsx";
 import FallacyLab from "./components/FallacyLab.jsx";
 import SessionAnalytics from "./components/SessionAnalytics.jsx";
+import SequenceAnalyzer from "./components/SequenceAnalyzer.jsx";
 
 const fmt = (n) =>
   (n < 0 ? "−$" : "$") + Math.abs(Math.round(n * 100) / 100).toLocaleString("en-US", { maximumFractionDigits: 2 });
@@ -15,6 +17,7 @@ const fmt = (n) =>
 const TABS = [
   ["telemetry", "Telemetry"],
   ["analytics", "Analytics"],
+  ["analyze", "Analyze"],
   ["table", "Table"],
   ["lab", "Fallacy Lab"],
   ["log", "Log"],
@@ -31,6 +34,7 @@ export default function App() {
   const [records, setRecords] = useState([]); // per-spin { staked, returned, net, ev }
   const [log, setLog] = useState([]);
   const [lastOut, setLastOut] = useState(null);
+  const [spinId, setSpinId] = useState(0); // increments per spin to retrigger animations
   const [tab, setTab] = useState("telemetry");
 
   const rng = useRef(null);
@@ -95,6 +99,7 @@ export default function App() {
     setHistory((h) => [...h, { n: out.n, idx: out.idx, q: out.q, color: out.color }]);
     setRecords((r) => [...r, { staked: res.staked, returned: res.returned, net: res.net, ev }]);
     setLastOut(out);
+    setSpinId((s) => s + 1);
     setBetStack([]); // undo applies to edits since the last spin
     const qid = WHEELS[wheelKey].quadrants[out.q].id;
     const head = `#${history.length + 1}  ${out.n} ${out.color.toUpperCase()} · ${qid}`;
@@ -109,8 +114,8 @@ export default function App() {
     <div className="app">
       <header className="hdr">
         <div className="hdr-brand">
-          <span className="hdr-mark">QUADRANT</span>
-          <span className="hdr-sub">AC roulette trainer · fair RNG · droughts are descriptive, not predictive</span>
+          <span className="hdr-dot" aria-hidden="true" />
+          <span className="hdr-mark">Roulette Trainer</span>
         </div>
         <div className="hdr-controls">
           <div className="seg">
@@ -139,6 +144,7 @@ export default function App() {
       <main className="grid">
         <section className="col left">
           <div className="card wheel-card">
+            <ResultsTicker wheelKey={wheelKey} history={history} limit={22} label="recent" />
             <BetConsole
               chip={chip}
               setChip={setChip}
@@ -148,7 +154,7 @@ export default function App() {
               hasBets={staked > 0}
             />
             <div className="wheel-wrap">
-              <Wheel wheelKey={wheelKey} lastIdx={lastOut ? lastOut.idx : null} stats={stats} bets={bets} onBet={onBet} />
+              <Wheel wheelKey={wheelKey} lastIdx={lastOut ? lastOut.idx : null} stats={stats} bets={bets} onBet={onBet} spinId={spinId} />
             </div>
             <OutsideBets wheelKey={wheelKey} bets={bets} onBet={onBet} />
             <div className="spin-row">
@@ -184,6 +190,9 @@ export default function App() {
             </div>
             <div className="tab-pane" hidden={tab !== "analytics"}>
               <SessionAnalytics pnl={pnl} wheelKey={wheelKey} />
+            </div>
+            <div className="tab-pane" hidden={tab !== "analyze"}>
+              <SequenceAnalyzer defaultWheel={wheelKey} />
             </div>
             <div className="tab-pane" hidden={tab !== "table"}>
               <Board wheelKey={wheelKey} bets={bets} onBet={onBet} />

@@ -10,7 +10,7 @@
 // ---------------------------------------------------------------------------
 
 import { WHEELS, RED, CALL_BETS_EU, colorOf, quadrantIndexOf } from "../src/wheels.js";
-import { spin, resolve, mulberry32, asIntRand, simulateStrategies, betEV, pnlStats, colorStats } from "../src/engine.js";
+import { spin, resolve, mulberry32, asIntRand, simulateStrategies, betEV, pnlStats, colorStats, parseSequence } from "../src/engine.js";
 
 let failures = 0;
 const ok = (cond, label, detail = "") => {
@@ -220,6 +220,29 @@ console.log("\n[5/5] Session P&L analytics (pnlStats on a hand-built stream)");
     ok(near(c.reduce((s, x) => s + x.p, 0), 1, 1e-9), `${wk}: color probabilities sum to 1`);
     ok(c.every((x) => x.hits === 0 && x.drought === 0 && x.share === 0), `${wk}: empty history → zeroed color stats`);
   }
+}
+
+// Manual sequence parser — the Analyze tab feeds pasted numbers through this and
+// then through the SAME quadrantStats/colorStats/chiSquare as the live table.
+{
+  // american: mixes commas/spaces/newlines, a leading-zero token, both zeros,
+  // and two junk tokens that must be flagged, not dropped.
+  const { history, invalid, count, total } = parseSequence("american", "0, 00, 07,14\n32 99 red");
+  ok(count === 5 && total === 7, "parseSequence: 5 valid of 7 tokens", `${count}/${total}`);
+  ok(invalid.join(",") === "99,red", "parseSequence: flags junk tokens (99, red)", invalid.join(","));
+  ok(history.map((h) => h.n).join(",") === "0,00,7,14,32", "parseSequence: normalizes '07'→'7', keeps '00'", history.map((h) => h.n).join(","));
+  ok(history.every((h) => WHEELS.american.seq[h.idx] === h.n), "parseSequence: idx maps back to the pocket");
+  // quadrant + color classification agrees with the live helpers
+  ok(history[0].q === quadrantIndexOf("american", WHEELS.american.seq.indexOf("0")), "parseSequence: quadrant tag matches quadrantIndexOf");
+  ok(history[3].color === colorOf("14"), "parseSequence: color tag matches colorOf");
+  // european: "00" is not a pocket, so it must be rejected there
+  const eu = parseSequence("european", "00, 0, 36");
+  ok(eu.count === 2 && eu.invalid.join(",") === "00", "parseSequence: '00' invalid on the single-zero wheel", `${eu.count} valid, invalid ${eu.invalid.join(",")}`);
+  // parsed history is a drop-in for the stats engine
+  const cs = colorStats("american", history);
+  const byId = Object.fromEntries(cs.colors.map((c) => [c.id, c]));
+  ok(byId.green.hits === 2 && byId.red.hits === 3 && byId.black.hits === 0, "parseSequence: feeds colorStats (2G / 3R / 0B)", `${byId.green.hits}G/${byId.red.hits}R/${byId.black.hits}B`);
+  ok(parseSequence("american", "   ").count === 0, "parseSequence: whitespace-only → empty, no throw");
 }
 
 // --- Result -------------------------------------------------------------------

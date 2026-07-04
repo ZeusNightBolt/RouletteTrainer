@@ -46,10 +46,11 @@ function ChipDot({ r, ang, amount }) {
   );
 }
 
-export default function Wheel({ wheelKey, lastIdx, stats, bets = {}, onBet }) {
+export default function Wheel({ wheelKey, lastIdx, stats, bets = {}, onBet, spinId = 0 }) {
   const wheel = WHEELS[wheelKey];
   const N = wheel.seq.length;
   const step = 360 / N;
+  const ballAngle = lastIdx != null ? lastIdx * step : 0;
 
   const last = lastIdx != null ? wheel.seq[lastIdx] : null;
   const lastColor = last ? colorOf(last) : null;
@@ -157,11 +158,17 @@ export default function Wheel({ wheelKey, lastIdx, stats, bets = {}, onBet }) {
         );
       })}
 
-      {/* ball settled in the groove at the last result */}
-      {lastIdx != null && (() => {
-        const [bx, by] = polar(R_BALL, lastIdx * step);
-        return <circle cx={bx} cy={by} r="7.5" className="ball" filter="url(#ballShadow)" />;
-      })()}
+      {/* ball orbits and settles on the result — the group rotates around the
+          wheel centre; keying it on spinId restarts the landing animation. */}
+      {lastIdx != null && (
+        <g
+          key={spinId}
+          className="ball-orbit"
+          style={{ "--land": `${ballAngle}deg`, transform: `rotate(${ballAngle}deg)`, transformBox: "view-box", transformOrigin: `${C}px ${C}px` }}
+        >
+          <circle cx={C} cy={C - R_BALL} r="7.5" className="ball" filter="url(#ballShadow)" />
+        </g>
+      )}
 
       {/* hub readout */}
       <circle cx={C} cy={C} r={R_HUB} fill="url(#hubGrad)" stroke="var(--line)" strokeWidth="1.5" />
@@ -171,7 +178,7 @@ export default function Wheel({ wheelKey, lastIdx, stats, bets = {}, onBet }) {
           <text x={C} y={C - 46} className="hub-caption" textAnchor="middle">
             LAST
           </text>
-          <text x={C} y={C + 26} className={"hub-number " + lastColor} textAnchor="middle">
+          <text key={spinId} x={C} y={C + 26} className={"hub-number pop " + lastColor} textAnchor="middle">
             {last}
           </text>
           <text x={C} y={C + 74} className="hub-quadrant" textAnchor="middle" fill={Q_COLORS[lastQ]}>

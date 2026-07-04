@@ -1,13 +1,10 @@
 import React from "react";
-import { WHEELS } from "../wheels.js";
 import { CHI2_CRIT_95, CHI2_CRIT_99 } from "../engine.js";
 
 const Q_CLASS = ["q1", "q2", "q3", "q4"];
 
-export default function QuadrantPanel({ wheelKey, stats, cstats, history, chi2 }) {
+export default function QuadrantPanel({ wheelKey, stats, cstats, history, chi2, titleOverride }) {
   const N = history.length;
-  const wheel = WHEELS[wheelKey];
-  const strip = history.slice(-20);
   const { colors, streak } = cstats;
 
   const chiVerdict =
@@ -22,7 +19,7 @@ export default function QuadrantPanel({ wheelKey, stats, cstats, history, chi2 }
   return (
     <div className="card qpanel">
       <div className="qpanel-head">
-        <div className="card-title">Quadrant telemetry — {N.toLocaleString()} spins</div>
+        <div className="card-title">{titleOverride || "Quadrant telemetry"} — {N.toLocaleString()} spins</div>
         <div className="qpanel-note">Descriptive only. P(each quadrant) is fixed every spin, whatever the drought.</div>
       </div>
 
@@ -78,22 +75,6 @@ export default function QuadrantPanel({ wheelKey, stats, cstats, history, chi2 }
           ) : (
             <span className="colorcell-stat dim">spin to start</span>
           )}
-        </div>
-      </div>
-
-      <div className="strip">
-        <span className="strip-label">last 20</span>
-        <div className="strip-cells">
-          {strip.length === 0 && <span className="strip-empty">—</span>}
-          {strip.map((h, i) => (
-            <span
-              key={N - strip.length + i}
-              className={`strip-cell ${Q_CLASS[h.q]} c-${h.color}`}
-              title={`${h.n} · ${h.color} · ${wheel.quadrants[h.q].id}`}
-            >
-              {h.n}
-            </span>
-          ))}
         </div>
       </div>
 
