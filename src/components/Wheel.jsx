@@ -1,14 +1,19 @@
 import React from "react";
 import { WHEELS, colorOf, quadrantIndexOf } from "../wheels.js";
 
-const C = 300; // center
-const R_IN = 176;
-const R_OUT = 254;
-const R_LBL = 216;
-const R_BALL = 190;
-const R_QIN = 260;
-const R_QOUT = 273;
-const R_QLBL = 288;
+// Geometry — 640 viewBox so the wheel renders larger and the outer betting
+// ring fits without clipping. The wheel is a betting surface: pockets take
+// straight-up bets, the outer quadrant ring takes sector bets.
+const C = 320;
+const R_HUB = 148;
+const R_BALL = 160; // groove between hub and pockets, like a settled ball
+const R_IN = 172;
+const R_OUT = 278;
+const R_LBL = 251;
+const R_CHIP = 205;
+const R_QIN = 286;
+const R_QOUT = 314;
+const R_QLBL = 300;
 
 const POCKET_FILL = { red: "var(--pocket-red)", black: "var(--pocket-black)", green: "var(--pocket-green)" };
 const Q_COLORS = ["var(--q1)", "var(--q2)", "var(--q3)", "var(--q4)"];
@@ -27,7 +32,21 @@ function annular(r1, r2, a0, a1) {
   return `M${x0} ${y0} A${r2} ${r2} 0 ${large} 1 ${x1} ${y1} L${x2} ${y2} A${r1} ${r1} 0 ${large} 0 ${x3} ${y3} Z`;
 }
 
-export default function Wheel({ wheelKey, lastIdx, stats }) {
+function ChipDot({ r, ang, amount }) {
+  const [x, y] = polar(r, ang);
+  const label = amount >= 1000 ? `${(amount / 1000).toFixed(amount % 1000 ? 1 : 0)}k` : amount;
+  return (
+    <g className="wchip">
+      <circle cx={x} cy={y} r="13" />
+      <circle cx={x} cy={y} r="9.5" className="wchip-ring" />
+      <text x={x} y={y + 0.5} textAnchor="middle" dominantBaseline="middle">
+        {label}
+      </text>
+    </g>
+  );
+}
+
+export default function Wheel({ wheelKey, lastIdx, stats, bets = {}, onBet }) {
   const wheel = WHEELS[wheelKey];
   const N = wheel.seq.length;
   const step = 360 / N;
@@ -37,86 +56,138 @@ export default function Wheel({ wheelKey, lastIdx, stats }) {
   const lastQ = lastIdx != null ? quadrantIndexOf(wheelKey, lastIdx) : -1;
 
   return (
-    <svg viewBox="0 0 600 600" className="wheel" role="img" aria-label={`${wheel.label} wheel, last result ${last ?? "none"}`}>
-      {/* quadrant telemetry ring */}
+    <svg
+      viewBox="0 0 640 640"
+      className="wheel"
+      aria-label={`${wheel.label} wheel betting surface, last result ${last ?? "none"}. Click a pocket for a straight-up bet, click the outer ring for a quadrant bet.`}
+    >
+      <defs>
+        <radialGradient id="hubGrad" cx="50%" cy="42%" r="72%">
+          <stop offset="0%" stopColor="#1c2f23" />
+          <stop offset="70%" stopColor="var(--felt-2)" />
+          <stop offset="100%" stopColor="#101c15" />
+        </radialGradient>
+        <radialGradient id="dishGrad" cx="50%" cy="50%" r="50%">
+          <stop offset="78%" stopColor="#0a110d" />
+          <stop offset="97%" stopColor="#18271e" />
+          <stop offset="100%" stopColor="#0a110d" />
+        </radialGradient>
+        <filter id="hitGlow" x="-60%" y="-60%" width="220%" height="220%">
+          <feDropShadow dx="0" dy="0" stdDeviation="6" floodColor="#f6f1e4" floodOpacity="0.55" />
+        </filter>
+        <filter id="ballShadow" x="-80%" y="-80%" width="260%" height="260%">
+          <feDropShadow dx="0" dy="1.5" stdDeviation="2" floodColor="#000" floodOpacity="0.6" />
+        </filter>
+      </defs>
+
+      {/* dish under everything */}
+      <circle cx={C} cy={C} r={R_QOUT + 4} fill="url(#dishGrad)" />
+
+      {/* quadrant bet ring — click to place a sector bet */}
       {wheel.quadrants.map((q, k) => {
         const a0 = q.start * step - step / 2;
         const a1 = (q.end + 1) * step - step / 2;
-        const mid = (a0 + a1) / 2;
-        const [lx, ly] = polar(R_QLBL, mid);
         const s = stats[k];
+        const amt = bets["q:" + k];
         return (
-          <g key={q.id}>
-            <path d={annular(R_QIN, R_QOUT, a0, a1)} fill={Q_COLORS[k]} opacity="0.92" />
-            <text x={lx} y={ly} className={"q-ring-label" + (s.drought >= 10 ? " cold" : "")} textAnchor="middle" dominantBaseline="middle">
-              {q.id}·{s.drought}
-            </text>
+          <g key={q.id} className="qring-seg" onClick={(e) => onBet && onBet("q:" + k, e)}>
+            <title>{`${q.id} sector bet — ${s.m} pockets · ${(100 * s.p).toFixed(2)}% · ${s.drought} spins dry${amt ? ` · $${amt} riding` : ""}`}</title>
+            <path d={annular(R_QIN, R_QOUT, a0 + 0.4, a1 - 0.4)} fill={Q_COLORS[k]} className="qring-arc" />
           </g>
         );
       })}
 
-      {/* pockets */}
+      {/* pockets — click for a straight-up bet */}
       {wheel.seq.map((n, i) => {
         const a0 = i * step - step / 2;
-        const a1 = a0 + step;
-        const isLast = i === lastIdx;
-        return (
-          <path
-            key={n}
-            d={annular(R_IN, R_OUT, a0, a1)}
-            fill={POCKET_FILL[colorOf(n)]}
-            stroke={isLast ? "var(--bone)" : "var(--felt)"}
-            strokeWidth={isLast ? 2.5 : 1}
-          />
-        );
-      })}
-
-      {/* pocket labels */}
-      {wheel.seq.map((n, i) => {
         const ang = i * step;
-        const [x, y] = polar(R_LBL, ang);
+        const isLast = i === lastIdx;
+        const amt = bets["s:" + n];
+        const [lx, ly] = polar(R_LBL, ang);
         return (
-          <text key={"t" + n} x={x} y={y} className="pocket-label" textAnchor="middle" dominantBaseline="middle" transform={`rotate(${ang} ${x} ${y})`}>
-            {n}
-          </text>
+          <g key={n} className="pocket" onClick={(e) => onBet && onBet("s:" + n, e)}>
+            <title>{`${n} ${colorOf(n)} — straight up pays 35:1${amt ? ` · $${amt} riding` : ""}`}</title>
+            <path
+              d={annular(R_IN, R_OUT, a0, a0 + step)}
+              fill={POCKET_FILL[colorOf(n)]}
+              stroke={isLast ? "var(--bone)" : "#0b1310"}
+              strokeWidth={isLast ? 2.5 : 1}
+              filter={isLast ? "url(#hitGlow)" : undefined}
+            />
+            <text x={lx} y={ly} className="pocket-label" textAnchor="middle" dominantBaseline="middle" transform={`rotate(${ang} ${lx} ${ly})`}>
+              {n}
+            </text>
+            {amt ? <ChipDot r={R_CHIP} ang={ang} amount={amt} /> : null}
+          </g>
         );
       })}
 
       {/* quadrant boundary ticks */}
       {wheel.quadrants.map((q) => {
         const a = q.start * step - step / 2;
-        const [x0, y0] = polar(R_IN - 6, a);
-        const [x1, y1] = polar(R_QOUT + 3, a);
-        return <line key={"b" + q.id} x1={x0} y1={y0} x2={x1} y2={y1} stroke="var(--felt)" strokeWidth="3" />;
+        const [x0, y0] = polar(R_IN - 8, a);
+        const [x1, y1] = polar(R_QOUT + 2, a);
+        return <line key={"b" + q.id} x1={x0} y1={y0} x2={x1} y2={y1} stroke="#0b1310" strokeWidth="3.5" />;
       })}
 
-      {/* ball on last result */}
+      {/* ring labels — drawn after pockets so nothing overpaints them; rotated
+          tangentially like the pocket numbers, flipped upright on the bottom half */}
+      {wheel.quadrants.map((q, k) => {
+        const a0 = q.start * step - step / 2;
+        const a1 = (q.end + 1) * step - step / 2;
+        const mid = (a0 + a1) / 2;
+        const norm = ((mid % 360) + 360) % 360;
+        const rot = norm > 90 && norm < 270 ? mid + 180 : mid;
+        const [lx, ly] = polar(R_QLBL, mid);
+        const s = stats[k];
+        const amt = bets["q:" + k];
+        return (
+          <text
+            key={"ql" + q.id}
+            x={lx}
+            y={ly}
+            className={"q-ring-label" + (s.drought >= 10 ? " cold" : "")}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            transform={`rotate(${rot} ${lx} ${ly})`}
+          >
+            {q.id}·{s.drought}
+            {amt ? <tspan className="q-ring-bet">{`  $${amt}`}</tspan> : null}
+          </text>
+        );
+      })}
+
+      {/* ball settled in the groove at the last result */}
       {lastIdx != null && (() => {
         const [bx, by] = polar(R_BALL, lastIdx * step);
-        return <circle cx={bx} cy={by} r="7" className="ball" />;
+        return <circle cx={bx} cy={by} r="7.5" className="ball" filter="url(#ballShadow)" />;
       })()}
 
       {/* hub readout */}
-      <circle cx={C} cy={C} r="150" fill="var(--felt-2)" stroke="var(--line)" strokeWidth="1.5" />
+      <circle cx={C} cy={C} r={R_HUB} fill="url(#hubGrad)" stroke="var(--line)" strokeWidth="1.5" />
+      <circle cx={C} cy={C} r={R_HUB - 10} fill="none" stroke="var(--line)" strokeWidth="0.75" opacity="0.6" />
       {last ? (
         <>
-          <text x={C} y={C - 44} className="hub-caption" textAnchor="middle">
+          <text x={C} y={C - 46} className="hub-caption" textAnchor="middle">
             LAST
           </text>
           <text x={C} y={C + 26} className={"hub-number " + lastColor} textAnchor="middle">
             {last}
           </text>
-          <text x={C} y={C + 72} className="hub-quadrant" textAnchor="middle" fill={Q_COLORS[lastQ]}>
+          <text x={C} y={C + 74} className="hub-quadrant" textAnchor="middle" fill={Q_COLORS[lastQ]}>
             {wheel.quadrants[lastQ].id} · {lastColor.toUpperCase()}
           </text>
         </>
       ) : (
         <>
-          <text x={C} y={C - 6} className="hub-caption" textAnchor="middle">
+          <text x={C} y={C - 8} className="hub-caption" textAnchor="middle">
             {wheel.label.toUpperCase()}
           </text>
-          <text x={C} y={C + 26} className="hub-idle" textAnchor="middle">
+          <text x={C} y={C + 22} className="hub-idle" textAnchor="middle">
             {N} pockets · spin to begin
+          </text>
+          <text x={C} y={C + 44} className="hub-idle" textAnchor="middle">
+            tap pockets &amp; ring to bet
           </text>
         </>
       )}

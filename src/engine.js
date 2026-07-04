@@ -213,6 +213,49 @@ export function quadrantStats(wheelKey, history) {
   });
 }
 
+// Color telemetry — same descriptive-only contract as quadrantStats. Exactly
+// 18 red and 18 black pockets on both wheels; green is the zero arc (2/38 or
+// 1/37). Droughts and streaks are scoreboards: P(color) is identical on every
+// spin no matter what the strip shows.
+export function colorStats(wheelKey, history) {
+  const wheel = WHEELS[wheelKey];
+  const T = wheel.seq.length;
+  const N = history.length;
+  const defs = [
+    { id: "red", p: 18 / T },
+    { id: "black", p: 18 / T },
+    { id: "green", p: wheel.zeroPockets.length / T },
+  ];
+  const out = defs.map((d) => {
+    let hits = 0;
+    let last = -1;
+    for (let i = 0; i < N; i++) {
+      if (history[i].color === d.id) {
+        hits++;
+        last = i;
+      }
+    }
+    return {
+      id: d.id,
+      p: d.p,
+      hits,
+      expected: N * d.p,
+      share: N ? hits / N : 0,
+      drought: last < 0 ? N : N - 1 - last,
+    };
+  });
+
+  // current run of the most recent color
+  let streak = null;
+  if (N) {
+    const c = history[N - 1].color;
+    let len = 0;
+    for (let i = N - 1; i >= 0 && history[i].color === c; i--) len++;
+    streak = { color: c, len };
+  }
+  return { colors: out, streak };
+}
+
 // Pearson chi-square against the fair-wheel expectation (unequal p_i because
 // the quadrant split is 9/10/9/10 or 10/9/9/9). df = 3.
 // Critical values: 7.815 (alpha 0.05), 11.345 (alpha 0.01).

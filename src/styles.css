@@ -45,6 +45,11 @@ body {
   font-size: 13.5px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  /* subtle depth over the opaque --bg base (still set on html/body/#root) */
+  background-image:
+    radial-gradient(1100px 540px at 16% -10%, rgba(45, 212, 191, 0.05), transparent 60%),
+    radial-gradient(900px 500px at 90% 2%, rgba(226, 183, 85, 0.045), transparent 55%);
+  background-attachment: fixed;
 }
 
 * {
@@ -164,7 +169,7 @@ button:focus-visible {
 
 .grid {
   display: grid;
-  grid-template-columns: minmax(420px, 570px) 1fr;
+  grid-template-columns: minmax(460px, 680px) 1fr;
   gap: 18px;
   align-items: start;
 }
@@ -176,10 +181,11 @@ button:focus-visible {
 }
 
 .card {
-  background: var(--felt);
+  background: linear-gradient(180deg, #121e17, var(--felt));
   border: 1px solid var(--line);
   border-radius: 14px;
   padding: 16px 18px;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(234, 227, 212, 0.03);
 }
 .card-title {
   font-family: var(--font-display);
@@ -208,23 +214,77 @@ button:focus-visible {
 .wheel {
   display: block;
   width: 100%;
+  max-width: 660px;
   height: auto;
+  margin: 0 auto;
+}
+.wheel-card {
+  background:
+    radial-gradient(58% 52% at 50% 44%, rgba(45, 212, 191, 0.045), transparent 70%),
+    linear-gradient(180deg, #121e17, var(--felt));
+}
+.pocket {
+  cursor: pointer;
+}
+.pocket path {
+  transition: filter 0.12s ease;
+}
+.pocket:hover path {
+  filter: brightness(1.3);
 }
 .pocket-label {
   font-family: var(--font-mono);
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 600;
   fill: var(--bone);
+  pointer-events: none;
+}
+.qring-seg {
+  cursor: pointer;
+}
+.qring-arc {
+  opacity: 0.88;
+  transition: opacity 0.12s ease, filter 0.12s ease;
+}
+.qring-seg:hover .qring-arc {
+  opacity: 1;
+  filter: brightness(1.08);
 }
 .q-ring-label {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 13px;
+  font-size: 13.5px;
   letter-spacing: 0.5px;
-  fill: var(--dim);
+  fill: #0e1611; /* dark ink — the label sits ON the colored bet arc now */
+  pointer-events: none;
 }
 .q-ring-label.cold {
-  fill: var(--cold);
+  fill: #7c0f26;
+}
+.q-ring-bet {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+}
+.wchip circle {
+  fill: var(--gold);
+  stroke: var(--gold-ink);
+  stroke-width: 1;
+}
+.wchip .wchip-ring {
+  fill: none;
+  stroke: var(--gold-ink);
+  stroke-width: 1;
+  stroke-dasharray: 3 2.6;
+}
+.wchip text {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  fill: var(--gold-ink);
+}
+.wchip {
+  pointer-events: none; /* clicks fall through to the pocket group */
 }
 .ball {
   fill: #f6f1e4;
@@ -241,6 +301,7 @@ button:focus-visible {
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 92px;
+  filter: drop-shadow(0 0 16px rgba(246, 241, 228, 0.14));
 }
 .hub-number.red {
   fill: #ff6d5f;
@@ -300,7 +361,7 @@ button:focus-visible {
   color: var(--bone);
 }
 .btn.spin {
-  background: var(--gold);
+  background: linear-gradient(180deg, #efc86a, #d4a53f);
   border-color: var(--gold);
   color: var(--gold-ink);
   font-family: var(--font-display);
@@ -309,6 +370,7 @@ button:focus-visible {
   letter-spacing: 4px;
   padding: 10px 38px;
   border-radius: 11px;
+  box-shadow: 0 0 22px rgba(226, 183, 85, 0.26), 0 4px 14px rgba(0, 0, 0, 0.35);
 }
 .btn.spin:hover {
   filter: brightness(1.07);
@@ -447,9 +509,68 @@ button:focus-visible {
 .strip-cell.q2 { border-bottom-color: var(--q2); }
 .strip-cell.q3 { border-bottom-color: var(--q3); }
 .strip-cell.q4 { border-bottom-color: var(--q4); }
+/* number ink = pocket color, bottom border = quadrant: both dimensions at a glance */
+.strip-cell.c-red { color: #ff6d5f; }
+.strip-cell.c-black { color: var(--bone); }
+.strip-cell.c-green { color: #3bda8d; }
 .strip-empty {
   color: var(--dim);
 }
+
+/* --- color telemetry bar ------------------------------------------------------------- */
+
+.colorbar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+}
+.colorcell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--felt-2);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 7px 10px;
+  min-width: 0;
+}
+.colorcell-dot {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+.colorcell.red .colorcell-dot { background: var(--pocket-red); }
+.colorcell.black .colorcell-dot { background: #262f34; box-shadow: inset 0 0 0 1px #46535a; }
+.colorcell.green .colorcell-dot { background: var(--pocket-green); }
+.colorcell-id {
+  font-size: 9.5px;
+  letter-spacing: 0.8px;
+  color: var(--dim);
+}
+.colorcell-stat {
+  font-size: 11px;
+}
+.colorcell-stat b {
+  font-weight: 600;
+}
+.colorcell-stat.dim {
+  color: var(--dim);
+  font-size: 10px;
+}
+.streak-val {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 18px;
+  line-height: 1.15;
+}
+.streak-val.red { color: #ff6d5f; }
+.streak-val.black { color: var(--bone); }
+.streak-val.green { color: #3bda8d; }
 
 .chi {
   display: flex;
@@ -848,7 +969,8 @@ button:focus-visible {
   .qcards,
   .lab-grid,
   .an-grid,
-  .an-grid.four {
+  .an-grid.four,
+  .colorbar {
     grid-template-columns: repeat(2, 1fr);
   }
   .outside-grid.evens {
