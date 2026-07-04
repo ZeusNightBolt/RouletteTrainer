@@ -10,7 +10,7 @@
 // ---------------------------------------------------------------------------
 
 import { WHEELS, RED, CALL_BETS_EU, colorOf, quadrantIndexOf } from "../src/wheels.js";
-import { spin, resolve, mulberry32, asIntRand, simulateStrategies, betEV, pnlStats } from "../src/engine.js";
+import { spin, resolve, mulberry32, asIntRand, simulateStrategies, betEV, pnlStats, colorStats } from "../src/engine.js";
 
 let failures = 0;
 const ok = (cond, label, detail = "") => {
@@ -203,6 +203,23 @@ console.log("\n[5/5] Session P&L analytics (pnlStats on a hand-built stream)");
 {
   const e = pnlStats([]);
   ok(e.spins === 0 && e.rounds === 0 && e.net === 0 && e.realizedEdge === 0 && e.curve.length === 0, "empty session → all-zero, no NaN");
+}
+
+// Color telemetry — descriptive rollup checked by hand, plus the exact color
+// probabilities (18 red / 18 black / zero-arc green on both wheels).
+{
+  const hist = ["red", "red", "black", "green", "red"].map((color) => ({ color }));
+  const { colors, streak } = colorStats("american", hist);
+  const byId = Object.fromEntries(colors.map((c) => [c.id, c]));
+  ok(byId.red.hits === 3 && byId.black.hits === 1 && byId.green.hits === 1, "color hits 3R / 1B / 1G on hand-built history");
+  ok(byId.red.drought === 0 && byId.black.drought === 2 && byId.green.drought === 1, "color droughts 0R / 2B / 1G", `${byId.red.drought}/${byId.black.drought}/${byId.green.drought}`);
+  ok(streak.color === "red" && streak.len === 1, "current streak RED ×1");
+  ok(near(byId.red.expected, 5 * 18 / 38, 1e-9) && near(byId.green.expected, 5 * 2 / 38, 1e-9), "color expectations use exact 18/38 and 2/38");
+  for (const wk of ["american", "european"]) {
+    const { colors: c } = colorStats(wk, []);
+    ok(near(c.reduce((s, x) => s + x.p, 0), 1, 1e-9), `${wk}: color probabilities sum to 1`);
+    ok(c.every((x) => x.hits === 0 && x.drought === 0 && x.share === 0), `${wk}: empty history → zeroed color stats`);
+  }
 }
 
 // --- Result -------------------------------------------------------------------

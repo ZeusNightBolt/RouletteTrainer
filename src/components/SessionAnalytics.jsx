@@ -17,9 +17,15 @@ function EquityCurve({ curve, evCurve }) {
   const path = useMemo(() => {
     const n = curve.length;
     if (n < 2) return null;
-    const all = curve.concat(evCurve, [0]);
-    let lo = Math.min(...all);
-    let hi = Math.max(...all);
+    // loop, not Math.min(...spread) — spread overflows the arg stack on very long sessions
+    let lo = 0;
+    let hi = 0;
+    for (const arr of [curve, evCurve]) {
+      for (const v of arr) {
+        if (v < lo) lo = v;
+        if (v > hi) hi = v;
+      }
+    }
     if (hi - lo < 1e-6) {
       lo -= 1;
       hi += 1;
@@ -48,7 +54,7 @@ function EquityCurve({ curve, evCurve }) {
   );
 }
 
-export default function SessionAnalytics({ pnl, wheelKey, halfBack }) {
+export default function SessionAnalytics({ pnl, wheelKey }) {
   const { rounds, net, staked, realizedEdge, expectedEdge, hitRate, wins, losses, maxWinStreak, maxLossStreak, maxDrawdown, biggestWin, curve, evCurve } = pnl;
 
   const flatEdge = wheelKey === "american" ? -5.263 : -2.703;

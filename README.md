@@ -5,11 +5,12 @@
 A dark-theme React trainer for double-zero (Atlantic City rules) and single-zero roulette, built
 around one question: **do wheel-quadrant droughts carry any tradeable information?**
 
-The app gives you a real-sequence wheel, a full AC betting layout, live per-quadrant telemetry
-(current drought, max drought, hit share, χ² vs. fair), a **Session Analytics** card that plots
-your realized bankroll against the *exact* expected-value line, and a **Fallacy Lab** that runs
-100,000 spins in-browser pitting *bet-the-coldest-quadrant* against *bet-a-fixed-quadrant* and
-*bet-at-random* on the **same spins**.
+The app gives you a real-sequence wheel that is itself the betting surface (click a pocket for a
+straight-up bet, click the outer ring for a sector bet — the AC table layout stays in sync), live
+per-quadrant **and per-color** telemetry (current drought, max drought, hit share, streak, χ² vs.
+fair), a **Session Analytics** card that plots your realized bankroll against the *exact*
+expected-value line, and a **Fallacy Lab** that runs 100,000 spins in-browser pitting
+*bet-the-coldest-quadrant* against *bet-a-fixed-quadrant* and *bet-at-random* on the **same spins**.
 
 The answer — verified in CI on every deploy — is no.
 
@@ -92,8 +93,8 @@ every Pages deploy — if any payout, wheel datum, or the fallacy null drifts, t
 src/wheels.js      source of truth: pocket sequences, quadrant arcs, French call bets
 src/engine.js      pure engine (no DOM): crypto RNG w/ rejection sampling, bet resolution,
                    exact bet EV (betEV), quadrant stats, χ², strategy simulator, session P&L (pnlStats)
-test/verify.js     CI gate: 62 assertions — exact data invariants, MC edges vs theory,
-                   gambler's-fallacy null, closed-form EV, session-analytics rollups
+test/verify.js     CI gate: 69 assertions — exact data invariants, MC edges vs theory,
+                   gambler's-fallacy null, closed-form EV, session-analytics + color rollups
 src/App.jsx        state + wiring
 src/components/    Wheel (SVG + telemetry ring), Board (AC layout), QuadrantPanel,
                    SessionAnalytics (equity curve + realized-vs-expected), FallacyLab

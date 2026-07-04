@@ -34,7 +34,7 @@
 
 ```bash
 npm install
-npm run verify    # 62-assertion gate (~10 s)
+npm run verify    # 69-assertion gate (~10 s)
 npm run dev       # Vite dev server
 npm run build     # production bundle → dist/
 npm run preview   # serve dist/
@@ -47,11 +47,12 @@ index.html                    dark-root shell, fonts
 src/main.jsx                  entry
 src/App.jsx                   state: wheel, bets, bankroll, history, log
 src/wheels.js                 wheel data + quadrant helpers (SOURCE OF TRUTH)
-src/engine.js                 RNG, spin, resolve, betEV, quadrantStats, chiSquare,
-                              simulateStrategies, pnlStats
-src/components/Wheel.jsx      SVG wheel + drought telemetry ring + hub readout
+src/engine.js                 RNG, spin, resolve, betEV, quadrantStats, colorStats,
+                              chiSquare, simulateStrategies, pnlStats
+src/components/Wheel.jsx      SVG wheel AS betting surface (pockets = straight-up,
+                              outer ring = sector) + drought ring + hub readout
 src/components/Board.jsx      AC layout, chips, sector bets, basket (american only)
-src/components/QuadrantPanel.jsx  4 quadrant cards, last-20 strip, live χ²
+src/components/QuadrantPanel.jsx  4 quadrant cards, color/streak bar, last-20 strip, live χ²
 src/components/SessionAnalytics.jsx  equity curve (realized vs exact-EV), P&L / edge / streak tiles
 src/components/FallacyLab.jsx 100k-spin cold/fixed/random comparison
 src/styles.css                full theme

@@ -4,10 +4,11 @@ import { CHI2_CRIT_95, CHI2_CRIT_99 } from "../engine.js";
 
 const Q_CLASS = ["q1", "q2", "q3", "q4"];
 
-export default function QuadrantPanel({ wheelKey, stats, history, chi2 }) {
+export default function QuadrantPanel({ wheelKey, stats, cstats, history, chi2 }) {
   const N = history.length;
   const wheel = WHEELS[wheelKey];
   const strip = history.slice(-20);
+  const { colors, streak } = cstats;
 
   const chiVerdict =
     N < 20
@@ -55,12 +56,41 @@ export default function QuadrantPanel({ wheelKey, stats, history, chi2 }) {
         ))}
       </div>
 
+      <div className="colorbar">
+        {colors.map((c) => (
+          <div key={c.id} className={"colorcell " + c.id}>
+            <span className="colorcell-dot" />
+            <span className="colorcell-id">{c.id.toUpperCase()}</span>
+            <span className="colorcell-stat">
+              <b>{c.hits}</b> / exp {c.expected.toFixed(1)}
+            </span>
+            <span className="colorcell-stat dim">
+              {N ? (100 * c.share).toFixed(1) + "%" : "—"} · dry {c.drought}
+            </span>
+          </div>
+        ))}
+        <div className="colorcell streakcell">
+          <span className="colorcell-id">STREAK</span>
+          {streak ? (
+            <span className={"streak-val " + streak.color}>
+              {streak.color.toUpperCase()} ×{streak.len}
+            </span>
+          ) : (
+            <span className="colorcell-stat dim">spin to start</span>
+          )}
+        </div>
+      </div>
+
       <div className="strip">
         <span className="strip-label">last 20</span>
         <div className="strip-cells">
           {strip.length === 0 && <span className="strip-empty">—</span>}
           {strip.map((h, i) => (
-            <span key={N - strip.length + i} className={"strip-cell " + Q_CLASS[h.q]} title={`${h.n} · ${wheel.quadrants[h.q].id}`}>
+            <span
+              key={N - strip.length + i}
+              className={`strip-cell ${Q_CLASS[h.q]} c-${h.color}`}
+              title={`${h.n} · ${h.color} · ${wheel.quadrants[h.q].id}`}
+            >
               {h.n}
             </span>
           ))}

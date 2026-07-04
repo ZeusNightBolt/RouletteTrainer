@@ -41,14 +41,12 @@ export default function Board({ wheelKey, bets, chip, setChip, onBet, onClear })
         </div>
 
         <div className="num-grid">
-          {rows.map((row) =>
-            row.map((n) => (
-              <button key={n} className={"cell " + (RED.has(n) ? "red" : "black")} onClick={(e) => onBet("s:" + n, e)}>
-                {n}
-                <ChipBadge amount={bets["s:" + n]} />
-              </button>
-            ))
-          )}
+          {rows.flat().map((n) => (
+            <button key={n} className={"cell " + (RED.has(n) ? "red" : "black")} onClick={(e) => onBet("s:" + n, e)}>
+              {n}
+              <ChipBadge amount={bets["s:" + n]} />
+            </button>
+          ))}
           {[1, 2, 3].map((c) => (
             <button key={"c" + c} className="cell outside" onClick={(e) => onBet("c:" + c, e)}>
               2:1

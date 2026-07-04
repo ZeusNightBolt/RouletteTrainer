@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState } from "react";
 import { WHEELS } from "./wheels.js";
-import { makeCryptoRng, spin, resolve, quadrantStats, chiSquare, betEV, pnlStats } from "./engine.js";
+import { makeCryptoRng, spin, resolve, quadrantStats, chiSquare, betEV, pnlStats, colorStats } from "./engine.js";
 import Wheel from "./components/Wheel.jsx";
 import Board from "./components/Board.jsx";
 import QuadrantPanel from "./components/QuadrantPanel.jsx";
@@ -25,6 +25,7 @@ export default function App() {
   if (!rng.current) rng.current = makeCryptoRng();
 
   const stats = useMemo(() => quadrantStats(wheelKey, history), [wheelKey, history]);
+  const cstats = useMemo(() => colorStats(wheelKey, history), [wheelKey, history]);
   const chi2 = useMemo(() => chiSquare(stats), [stats]);
   const staked = useMemo(() => Object.values(bets).reduce((a, b) => a + b, 0), [bets]);
   const pnl = useMemo(() => pnlStats(records), [records]);
@@ -69,7 +70,7 @@ export default function App() {
     const head = `#${history.length + 1}  ${out.n} ${out.color.toUpperCase()} · ${qid}`;
     pushLog(
       res.staked
-        ? `${head} — staked ${fmt(res.staked)}, returned ${fmt(res.returned)} (net ${res.net >= 0 ? "+" : ""}${fmt(res.net).replace("−$", "−$")})`
+        ? `${head} — staked ${fmt(res.staked)}, returned ${fmt(res.returned)} (net ${res.net >= 0 ? "+" : ""}${fmt(res.net)})`
         : `${head} — tracking only, no bets`
     );
   }
@@ -108,22 +109,24 @@ export default function App() {
       <main className="grid">
         <section className="col">
           <div className="card wheel-card">
-            <Wheel wheelKey={wheelKey} lastIdx={lastOut ? lastOut.idx : null} stats={stats} />
+            <Wheel wheelKey={wheelKey} lastIdx={lastOut ? lastOut.idx : null} stats={stats} bets={bets} onBet={onBet} />
             <div className="spin-row">
               <button className="btn spin" onClick={doSpin}>
                 SPIN
               </button>
               <span className="spin-note">
-                {staked > 0 ? `${fmt(staked)} riding — bets stay on the felt until cleared` : "no bets — quadrant tracking only"}
+                {staked > 0
+                  ? `${fmt(staked)} riding — bets stay on until cleared · shift-click removes`
+                  : "click a pocket (straight up) or the outer ring (sector) to bet — or spin to track only"}
               </span>
             </div>
           </div>
-          <SessionAnalytics pnl={pnl} wheelKey={wheelKey} halfBack={halfBack} />
+          <SessionAnalytics pnl={pnl} wheelKey={wheelKey} />
           <FallacyLab wheelKey={wheelKey} />
         </section>
 
         <section className="col">
-          <QuadrantPanel wheelKey={wheelKey} stats={stats} history={history} chi2={chi2} />
+          <QuadrantPanel wheelKey={wheelKey} stats={stats} cstats={cstats} history={history} chi2={chi2} />
           <Board wheelKey={wheelKey} bets={bets} chip={chip} setChip={setChip} onBet={onBet} onClear={() => setBets({})} />
           <div className="card log">
             <div className="card-title">Session log</div>
