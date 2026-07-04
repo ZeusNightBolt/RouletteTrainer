@@ -45,13 +45,16 @@ npm run preview   # serve dist/
 ```
 index.html                    dark-root shell, fonts
 src/main.jsx                  entry
-src/App.jsx                   state: wheel, bets, bankroll, history, log
+src/App.jsx                   state (wheel, bets + undo stack, bankroll, history, log)
+                              + viewport-fit layout: wheel console left, tabbed panel right
 src/wheels.js                 wheel data + quadrant helpers (SOURCE OF TRUTH)
 src/engine.js                 RNG, spin, resolve, betEV, quadrantStats, colorStats,
                               chiSquare, simulateStrategies, pnlStats
 src/components/Wheel.jsx      SVG wheel AS betting surface (pockets = straight-up,
                               outer ring = sector) + drought ring + hub readout
-src/components/Board.jsx      AC layout, chips, sector bets, basket (american only)
+src/components/BetConsole.jsx chip selector + undo/clear, docked at the wheel
+src/components/OutsideBets.jsx evens/dozens/columns/basket strip under the wheel
+src/components/Board.jsx      classic felt (Table tab) — same shared bet state
 src/components/QuadrantPanel.jsx  4 quadrant cards, color/streak bar, last-20 strip, live χ²
 src/components/SessionAnalytics.jsx  equity curve (realized vs exact-EV), P&L / edge / streak tiles
 src/components/FallacyLab.jsx 100k-spin cold/fixed/random comparison

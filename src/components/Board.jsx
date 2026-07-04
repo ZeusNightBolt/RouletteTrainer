@@ -1,7 +1,6 @@
 import React from "react";
 import { WHEELS, RED, quadrantSize } from "../wheels.js";
 
-const CHIPS = [1, 5, 25, 100, 500];
 const Q_CLASS = ["q1", "q2", "q3", "q4"];
 
 function ChipBadge({ amount }) {
@@ -9,7 +8,9 @@ function ChipBadge({ amount }) {
   return <span className="chip-badge">{amount}</span>;
 }
 
-export default function Board({ wheelKey, bets, chip, setChip, onBet, onClear }) {
+// Classic felt view. Chips/undo/clear live in the wheel console — this tab is
+// the same shared bet state seen as a table, and every cell is still clickable.
+export default function Board({ wheelKey, bets, onBet }) {
   const wheel = WHEELS[wheelKey];
   const rows = Array.from({ length: 12 }, (_, r) => [3 * r + 1, 3 * r + 2, 3 * r + 3]);
 
@@ -17,18 +18,8 @@ export default function Board({ wheelKey, bets, chip, setChip, onBet, onClear })
     <div className="card board">
       <div className="board-head">
         <div className="card-title">Atlantic City layout</div>
-        <div className="chip-row">
-          {CHIPS.map((c) => (
-            <button key={c} className={"chip" + (chip === c ? " on" : "")} onClick={() => setChip(c)}>
-              {c}
-            </button>
-          ))}
-          <button className="btn ghost" onClick={onClear}>
-            Clear bets
-          </button>
-        </div>
       </div>
-      <div className="board-hint">Click to add the selected chip · shift-click removes a bet · bets ride every spin until cleared.</div>
+      <div className="board-hint">Same bets as the wheel, shown on the felt · click adds the selected chip · shift-click removes.</div>
 
       <div className="layout">
         <div className={"zero-row " + wheelKey}>
