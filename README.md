@@ -5,12 +5,14 @@
 A dark-theme React trainer for double-zero (Atlantic City rules) and single-zero roulette, built
 around one question: **do wheel-quadrant droughts carry any tradeable information?**
 
-The app gives you a real-sequence wheel that is itself the betting surface (click a pocket for a
-straight-up bet, click the outer ring for a sector bet — the AC table layout stays in sync), live
-per-quadrant **and per-color** telemetry (current drought, max drought, hit share, streak, χ² vs.
-fair), a **Session Analytics** card that plots your realized bankroll against the *exact*
-expected-value line, and a **Fallacy Lab** that runs 100,000 spins in-browser pitting
-*bet-the-coldest-quadrant* against *bet-a-fixed-quadrant* and *bet-at-random* on the **same spins**.
+The app is a single-viewport betting console built around the wheel: pockets take straight-up
+bets, the outer ring takes sector bets, and a docked strip handles chips, undo/clear, and every
+outside bet (red/black, odd/even, high/low, dozens, columns, basket). Everything else lives in
+tabs beside the wheel — live per-quadrant **and per-color** telemetry (drought, hit share, streak,
+χ² vs. fair), a **Session Analytics** view that plots your realized bankroll against the *exact*
+expected-value line, the classic AC felt as a synced **Table** view, and a **Fallacy Lab** that
+runs 100,000 spins in-browser pitting *bet-the-coldest-quadrant* against *bet-a-fixed-quadrant*
+and *bet-at-random* on the **same spins**.
 
 The answer — verified in CI on every deploy — is no.
 
@@ -95,9 +97,10 @@ src/engine.js      pure engine (no DOM): crypto RNG w/ rejection sampling, bet r
                    exact bet EV (betEV), quadrant stats, χ², strategy simulator, session P&L (pnlStats)
 test/verify.js     CI gate: 69 assertions — exact data invariants, MC edges vs theory,
                    gambler's-fallacy null, closed-form EV, session-analytics + color rollups
-src/App.jsx        state + wiring
-src/components/    Wheel (SVG + telemetry ring), Board (AC layout), QuadrantPanel,
-                   SessionAnalytics (equity curve + realized-vs-expected), FallacyLab
+src/App.jsx        state + wiring, undo stack, viewport-fit tabbed layout
+src/components/    Wheel (bettable SVG + telemetry ring), BetConsole (chips/undo/clear),
+                   OutsideBets (evens/dozens/columns/basket), Board (Table tab),
+                   QuadrantPanel, SessionAnalytics (equity curve), FallacyLab
 ```
 
 Design constraints: the live table uses `crypto.getRandomValues` with rejection sampling
