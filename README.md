@@ -5,16 +5,19 @@
 A dark-theme React trainer for double-zero (Atlantic City rules) and single-zero roulette, built
 around one question: **do wheel-quadrant droughts carry any tradeable information?**
 
-The app is a single-viewport betting console built around an animated wheel: pockets take
-straight-up bets, the outer ring takes sector bets, a docked strip handles chips, undo/clear, and
-every outside bet (red/black, odd/even, high/low, dozens, columns, basket), and a recent-results
-ticker runs along the top. Everything else lives in tabs beside the wheel:
+The app plays like a real online roulette game with a **dual view**: you bet on the classic felt
+**mat** (the full table layout), hit **SPIN**, and the view flips to the **wheel** to show the
+result. Every real inside bet is on the felt — straight, **split**, street, corner, six-line — plus
+dozens, columns, even-money, and the basket. Because a split/corner/etc. is really a chip spread
+across several numbers, the wheel then shows the **per-pocket split amount** (a $10 split shows $5
+on each of its two pockets — computed, not faked) and highlights the winning pocket. A docked
+console handles chips, undo, and clear; a recent-results ticker runs along the top. Everything
+analytical lives in tabs beside the table:
 
 - **Telemetry** — live per-quadrant **and per-color** stats (drought, hit share, streak, χ² vs. fair).
 - **Analytics** — your realized bankroll plotted against the *exact* expected-value line.
 - **Analyze** — paste any comma/space/newline-separated list of results and get the full quadrant +
   color + χ² breakdown of that sequence (audit a real logged session; `00` supported on the 00 wheel).
-- **Table** — the classic AC felt, synced to the same bets.
 - **Fallacy Lab** — 100,000 spins in-browser pitting *bet-the-coldest-quadrant* against
   *bet-a-fixed-quadrant* and *bet-at-random* on the **same spins**.
 
@@ -57,8 +60,13 @@ honest casino simulation.
 | -------------------------------------------- | ---------- |
 | Even-money **with AC half-back** on 0/00     | **−2.63 %** |
 | Even-money on a single-zero wheel (la partage)| −1.35 % |
-| Any straight / split / dozen / column / sector| −5.26 % (−2.70 % single-zero) |
+| Any straight / split / street / corner / six-line / dozen / column / sector | −5.26 % (−2.70 % single-zero) |
 | Basket 0-00-1-2-3                             | −7.89 % — worst bet on the felt |
+
+Every inside bet covering *k* numbers pays the fair `36/k`-for-one ratio (straight 35:1, split 17:1,
+street 11:1, corner 8:1, six-line 5:1), so they all price to the same −5.26 % — asserted by both
+Monte Carlo and closed-form EV in CI. The only exception is the 5-number basket, whose 6:1 payout is
+short of the `36/5` fair line, giving −7.89 %.
 
 Quadrant facts the UI surfaces instead of hiding:
 
@@ -97,16 +105,17 @@ every Pages deploy — if any payout, wheel datum, or the fallacy null drifts, t
 
 ```
 src/wheels.js      source of truth: pocket sequences, quadrant arcs, French call bets
-src/engine.js      pure engine (no DOM): crypto RNG w/ rejection sampling, bet resolution,
-                   exact bet EV (betEV), sequence parser (parseSequence), quadrant/color stats,
-                   χ², strategy simulator, session P&L (pnlStats)
-test/verify.js     CI gate: 79 assertions — exact data invariants, MC edges vs theory,
-                   gambler's-fallacy null, closed-form EV, session-analytics + color +
-                   sequence-parser rollups
-src/App.jsx        state + wiring, undo stack, viewport-fit tabbed layout
-src/components/    Wheel (bettable SVG + ball-orbit anim), BetConsole (chips/undo/clear),
-                   OutsideBets, ResultsTicker (recent-numbers marquee), Board (Table tab),
-                   QuadrantPanel, SessionAnalytics, SequenceAnalyzer (Analyze tab), FallacyLab
+src/engine.js      pure engine (no DOM): crypto RNG w/ rejection sampling, bet resolution
+                   (incl. inside split/street/corner/six-line), exact bet EV (betEV), per-pocket
+                   stake split (pocketStakes), sequence parser, quadrant/color stats, χ²,
+                   strategy simulator, session P&L (pnlStats)
+test/verify.js     CI gate: 102 assertions — exact data invariants, MC edges vs theory (all bet
+                   types), gambler's-fallacy null, closed-form EV, per-pocket-stake conservation,
+                   session-analytics + color + sequence-parser rollups
+src/App.jsx        state + wiring, undo stack, dual-view (mat ⇄ wheel) + tabbed panel
+src/components/    RouletteMat (bettable felt: straight/split/street/corner/six-line + outside),
+                   Wheel (bettable SVG + ball-orbit anim + per-pocket split amounts), BetConsole,
+                   ResultsTicker, QuadrantPanel, SessionAnalytics, SequenceAnalyzer, FallacyLab
 ```
 
 Design constraints: the live table uses `crypto.getRandomValues` with rejection sampling

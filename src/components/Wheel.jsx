@@ -34,7 +34,8 @@ function annular(r1, r2, a0, a1) {
 
 function ChipDot({ r, ang, amount }) {
   const [x, y] = polar(r, ang);
-  const label = amount >= 1000 ? `${(amount / 1000).toFixed(amount % 1000 ? 1 : 0)}k` : amount;
+  const label =
+    amount >= 1000 ? `${(amount / 1000).toFixed(amount % 1000 ? 1 : 0)}k` : Number.isInteger(amount) ? amount : amount.toFixed(1);
   return (
     <g className="wchip">
       <circle cx={x} cy={y} r="13" />
@@ -46,7 +47,7 @@ function ChipDot({ r, ang, amount }) {
   );
 }
 
-export default function Wheel({ wheelKey, lastIdx, stats, bets = {}, onBet, spinId = 0 }) {
+export default function Wheel({ wheelKey, lastIdx, stats, bets = {}, stakes = {}, onBet, spinId = 0 }) {
   const wheel = WHEELS[wheelKey];
   const N = wheel.seq.length;
   const step = 360 / N;
@@ -98,16 +99,17 @@ export default function Wheel({ wheelKey, lastIdx, stats, bets = {}, onBet, spin
         );
       })}
 
-      {/* pockets — click for a straight-up bet */}
+      {/* pockets — chip shows the allocated stake landing on this pocket from
+          ALL number bets (a $10 split shows $5 here and $5 on its partner) */}
       {wheel.seq.map((n, i) => {
         const a0 = i * step - step / 2;
         const ang = i * step;
         const isLast = i === lastIdx;
-        const amt = bets["s:" + n];
+        const amt = stakes[n] || 0;
         const [lx, ly] = polar(R_LBL, ang);
         return (
           <g key={n} className="pocket" onClick={(e) => onBet && onBet("s:" + n, e)}>
-            <title>{`${n} ${colorOf(n)} — straight up pays 35:1${amt ? ` · $${amt} riding` : ""}`}</title>
+            <title>{`${n} ${colorOf(n)} — straight up pays 35:1${amt ? ` · $${amt} on this pocket` : ""}`}</title>
             <path
               d={annular(R_IN, R_OUT, a0, a0 + step)}
               fill={POCKET_FILL[colorOf(n)]}

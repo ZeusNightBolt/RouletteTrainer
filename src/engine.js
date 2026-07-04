@@ -118,6 +118,12 @@ export function resolve(bets, outcome, opts = {}) {
 
     if (t === "s") {
       if (sel === outcome.n) ret = amount * 36;
+    } else if (t === "i") {
+      // Inside multi-number bet — split (2), street/trio (3), corner (4),
+      // six-line (6). Numbers are hyphen-joined. Every one of these pays the
+      // fair "36/k for one" ratio, so a hit returns amount * 36/k.
+      const nums = sel.split("-");
+      if (!isZero && nums.includes(outcome.n)) ret = amount * (36 / nums.length);
     } else if (t === "q") {
       const q = wheel.quadrants[Number(sel)];
       const m = q.end - q.start + 1;
@@ -180,6 +186,9 @@ export function betEV(bets, wheelKey, opts = {}) {
 
     if (t === "s") {
       expReturned = (1 / N) * amount * 36;
+    } else if (t === "i") {
+      const k = sel.split("-").length; // covers k numbers, pays 36/k on a hit
+      expReturned = (k / N) * amount * (36 / k); // = amount * 36 / N
     } else if (t === "q") {
       const q = wheel.quadrants[Number(sel)];
       const m = q.end - q.start + 1;
@@ -196,6 +205,41 @@ export function betEV(bets, wheelKey, opts = {}) {
   }
 
   return { staked, ev, edge: staked ? (100 * ev) / staked : 0 };
+}
+
+// --- Per-pocket stake distribution --------------------------------------------
+//
+// Maps every "numbers" bet onto the individual pockets it covers, so the wheel
+// can show how a split/street/corner/etc. actually lands on the physical wheel.
+// A chip wagered on k numbers is an equal exposure of amount/k to each of those
+// k pockets — that is the real "split amount" a $10 split ($5 per number) puts
+// on each pocket. Straight bets contribute their full amount to one pocket, the
+// american top line (basket) spreads amount/5 over 0-00-1-2-3. Outside bets
+// (colour/dozen/column/sector) are not pocket-localized and are excluded.
+// Returns { "<pocket>": allocatedAmount } and the total distributed.
+export function pocketStakes(bets, wheelKey) {
+  const stakes = {};
+  let total = 0;
+  const add = (n, amt) => {
+    stakes[n] = (stakes[n] || 0) + amt;
+    total += amt;
+  };
+  for (const [key, amount] of Object.entries(bets)) {
+    if (!amount) continue;
+    const t = key[0];
+    const sel = key.slice(2);
+    if (t === "s") {
+      add(sel, amount);
+    } else if (t === "i") {
+      const nums = sel.split("-");
+      const per = amount / nums.length;
+      for (const n of nums) add(n, per);
+    } else if (t === "b") {
+      const per = amount / 5;
+      for (const n of ["0", "00", "1", "2", "3"]) add(n, per);
+    }
+  }
+  return { stakes, total };
 }
 
 // --- Session statistics -------------------------------------------------------

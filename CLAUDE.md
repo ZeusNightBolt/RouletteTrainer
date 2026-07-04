@@ -34,7 +34,7 @@
 
 ```bash
 npm install
-npm run verify    # 79-assertion gate (~10 s)
+npm run verify    # 102-assertion gate (~10 s)
 npm run dev       # Vite dev server
 npm run build     # production bundle → dist/
 npm run preview   # serve dist/
@@ -47,16 +47,16 @@ index.html                    dark-root shell, fonts
 src/main.jsx                  entry
 src/ui.js                     shared UI constants + formatters (Q_CLASS, CHIPS, fmt/signed/pct)
 src/App.jsx                   state (wheel, bets + undo stack, bankroll, history, log)
-                              + viewport-fit layout: wheel console left, tabbed panel right
+                              + dual view: felt MAT before spin, WHEEL after; tabbed panel right
 src/wheels.js                 wheel data + quadrant helpers (SOURCE OF TRUTH)
-src/engine.js                 RNG, spin, parseSequence, resolve, betEV, quadrantStats,
-                              colorStats, chiSquare, simulateStrategies, pnlStats
-src/components/Wheel.jsx      SVG wheel AS betting surface (pockets = straight-up,
-                              outer ring = sector) + drought ring + hub + ball-orbit anim
-src/components/BetConsole.jsx chip selector + undo/clear, docked at the wheel
-src/components/OutsideBets.jsx evens/dozens/columns/basket strip under the wheel
-src/components/ResultsTicker.jsx  recent-numbers marquee (top of wheel col + Analyze tab)
-src/components/Board.jsx      classic felt (Table tab) — same shared bet state
+src/engine.js                 RNG, spin, parseSequence, resolve (incl. inside "i:" bets), betEV,
+                              pocketStakes, quadrantStats, colorStats, chiSquare, simulateStrategies, pnlStats
+src/components/RouletteMat.jsx classic felt AS betting surface: straight/split/street/corner/
+                              six-line hotspots (geometry-derived) + dozens/columns/evens/basket
+src/components/Wheel.jsx      SVG wheel AS betting surface (pockets = straight-up, ring = sector);
+                              after spin shows per-pocket split amounts + winning-pocket highlight
+src/components/BetConsole.jsx chip selector + undo/clear, docked above the mat/wheel
+src/components/ResultsTicker.jsx  recent-numbers marquee (top of table col + Analyze tab)
 src/components/QuadrantPanel.jsx  4 quadrant cards, color/streak bar, live χ² (strip extracted)
 src/components/SessionAnalytics.jsx  equity curve (realized vs exact-EV), P&L / edge / streak tiles
 src/components/SequenceAnalyzer.jsx  Analyze tab: paste numbers → parseSequence → QuadrantPanel

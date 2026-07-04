@@ -1,10 +1,9 @@
 import React, { useMemo, useRef, useState } from "react";
 import { WHEELS } from "./wheels.js";
-import { makeCryptoRng, spin, resolve, quadrantStats, chiSquare, betEV, pnlStats, colorStats } from "./engine.js";
+import { makeCryptoRng, spin, resolve, quadrantStats, chiSquare, betEV, pnlStats, colorStats, pocketStakes } from "./engine.js";
 import Wheel from "./components/Wheel.jsx";
-import Board from "./components/Board.jsx";
+import RouletteMat from "./components/RouletteMat.jsx";
 import BetConsole from "./components/BetConsole.jsx";
-import OutsideBets from "./components/OutsideBets.jsx";
 import ResultsTicker from "./components/ResultsTicker.jsx";
 import QuadrantPanel from "./components/QuadrantPanel.jsx";
 import FallacyLab from "./components/FallacyLab.jsx";
@@ -16,7 +15,6 @@ const TABS = [
   ["telemetry", "Telemetry"],
   ["analytics", "Analytics"],
   ["analyze", "Analyze"],
-  ["table", "Table"],
   ["lab", "Fallacy Lab"],
   ["log", "Log"],
 ];
@@ -33,6 +31,7 @@ export default function App() {
   const [log, setLog] = useState([]);
   const [lastOut, setLastOut] = useState(null);
   const [spinId, setSpinId] = useState(0); // increments per spin to retrigger animations
+  const [view, setView] = useState("mat"); // "mat" (place bets) | "wheel" (spin result)
   const [tab, setTab] = useState("telemetry");
 
   const rng = useRef(null);
@@ -43,6 +42,7 @@ export default function App() {
   const chi2 = useMemo(() => chiSquare(stats), [stats]);
   const staked = useMemo(() => Object.values(bets).reduce((a, b) => a + b, 0), [bets]);
   const pnl = useMemo(() => pnlStats(records), [records]);
+  const stakes = useMemo(() => pocketStakes(bets, wheelKey).stakes, [bets, wheelKey]); // split amount per pocket
 
   const pushLog = (line) => setLog((l) => [line, ...l].slice(0, 30));
 
@@ -54,6 +54,7 @@ export default function App() {
     setHistory([]);
     setRecords([]);
     setLastOut(null);
+    setView("mat");
     pushLog(`Wheel switched to ${WHEELS[key].label} — session stats reset.`);
   }
 
@@ -98,6 +99,7 @@ export default function App() {
     setRecords((r) => [...r, { staked: res.staked, returned: res.returned, net: res.net, ev }]);
     setLastOut(out);
     setSpinId((s) => s + 1);
+    setView("wheel"); // dual view: reveal the wheel + result after the spin
     setBetStack([]); // undo applies to edits since the last spin
     const qid = WHEELS[wheelKey].quadrants[out.q].id;
     const head = `#${history.length + 1}  ${out.n} ${out.color.toUpperCase()} · ${qid}`;
@@ -142,7 +144,18 @@ export default function App() {
       <main className="grid">
         <section className="col left">
           <div className="card wheel-card">
-            <ResultsTicker wheelKey={wheelKey} history={history} limit={22} label="recent" />
+            <div className="table-head">
+              <ResultsTicker wheelKey={wheelKey} history={history} limit={18} label="recent" />
+              <div className="seg view-seg">
+                <button className={"seg-btn" + (view === "mat" ? " on" : "")} onClick={() => setView("mat")}>
+                  Table
+                </button>
+                <button className={"seg-btn" + (view === "wheel" ? " on" : "")} onClick={() => setView("wheel")} disabled={!lastOut}>
+                  Wheel
+                </button>
+              </div>
+            </div>
+
             <BetConsole
               chip={chip}
               setChip={setChip}
@@ -151,18 +164,40 @@ export default function App() {
               canUndo={betStack.length > 0}
               hasBets={staked > 0}
             />
-            <div className="wheel-wrap">
-              <Wheel wheelKey={wheelKey} lastIdx={lastOut ? lastOut.idx : null} stats={stats} bets={bets} onBet={onBet} spinId={spinId} />
-            </div>
-            <OutsideBets wheelKey={wheelKey} bets={bets} onBet={onBet} />
+
+            {view === "mat" ? (
+              <div className="mat-wrap">
+                <RouletteMat wheelKey={wheelKey} bets={bets} onBet={onBet} />
+              </div>
+            ) : (
+              <div className="wheel-wrap">
+                <Wheel
+                  wheelKey={wheelKey}
+                  lastIdx={lastOut ? lastOut.idx : null}
+                  stats={stats}
+                  bets={bets}
+                  stakes={stakes}
+                  onBet={onBet}
+                  spinId={spinId}
+                />
+              </div>
+            )}
+
             <div className="spin-row">
               <button className="btn spin" onClick={doSpin}>
                 SPIN
               </button>
+              {view === "wheel" && (
+                <button className="btn" onClick={() => setView("mat")}>
+                  ＋ New bets
+                </button>
+              )}
               <span className="spin-note">
-                {staked > 0
-                  ? `${fmt(staked)} riding — bets stay on until cleared · shift-click removes`
-                  : "pockets = straight up · outer ring = sector · strip below = outside bets"}
+                {view === "mat"
+                  ? staked > 0
+                    ? `${fmt(staked)} riding · click a line for a split, a corner for 4, edges for streets · shift-click removes`
+                    : "place bets on the felt — numbers, splits, corners, streets, six-lines, outside"
+                  : `result ${lastOut ? lastOut.n : ""} · chips show the split amount landing on each pocket`}
               </span>
             </div>
           </div>
@@ -191,9 +226,6 @@ export default function App() {
             </div>
             <div className="tab-pane" hidden={tab !== "analyze"}>
               <SequenceAnalyzer defaultWheel={wheelKey} />
-            </div>
-            <div className="tab-pane" hidden={tab !== "table"}>
-              <Board wheelKey={wheelKey} bets={bets} onBet={onBet} />
             </div>
             <div className="tab-pane" hidden={tab !== "lab"}>
               <FallacyLab wheelKey={wheelKey} />

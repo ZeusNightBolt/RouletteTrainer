@@ -418,6 +418,104 @@ button:focus-visible {
   }
 }
 
+/* --- dual view: felt mat + wheel ---------------------------------------------- */
+
+.table-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 0 0 auto;
+}
+.table-head .ticker {
+  flex: 1 1 auto;
+  min-width: 0;
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+.view-seg {
+  flex: 0 0 auto;
+}
+.view-seg .seg-btn {
+  font-size: 12.5px;
+  padding: 5px 13px;
+}
+.view-seg .seg-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.mat-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 8px 0;
+}
+.mat {
+  display: block;
+  width: 100%;
+  max-width: 820px;
+  height: auto;
+  max-height: 100%;
+}
+.mat-cell,
+.mat-spot {
+  cursor: pointer;
+}
+.mat-rect {
+  stroke: #0b1310;
+  stroke-width: 1.5;
+  transition: filter 0.1s ease;
+}
+.mat-rect.red { fill: var(--pocket-red); }
+.mat-rect.black { fill: var(--pocket-black); }
+.mat-rect.green { fill: var(--pocket-green); }
+.mat-rect.outside { fill: var(--felt-2); stroke: var(--line); }
+.mat-cell:hover .mat-rect {
+  filter: brightness(1.28);
+}
+.mat-label {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 19px;
+  fill: var(--bone);
+  pointer-events: none;
+}
+.mat-rect.outside + .mat-label {
+  font-size: 14px;
+}
+.mat-rect.red-ink + .mat-label { fill: #ff6d5f; }
+.mat-rect.black-ink + .mat-label { fill: var(--bone); }
+/* inside-bet hotspots — invisible until hovered or holding a chip */
+.mat-hot {
+  fill: rgba(226, 183, 85, 0.001);
+  stroke: transparent;
+  transition: fill 0.1s ease, stroke 0.1s ease;
+}
+.mat-spot:hover .mat-hot {
+  fill: rgba(226, 183, 85, 0.28);
+  stroke: var(--gold);
+  stroke-width: 1.5;
+}
+.mat-chip circle {
+  fill: var(--gold);
+  stroke: var(--gold-ink);
+  stroke-width: 1;
+}
+.mat-chip .mat-chip-ring {
+  fill: none;
+  stroke: var(--gold-ink);
+  stroke-width: 1;
+  stroke-dasharray: 3 2.4;
+}
+.mat-chip text {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  fill: var(--gold-ink);
+}
+
 /* --- wheel --------------------------------------------------------------------- */
 
 .wheel-wrap {
