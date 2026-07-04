@@ -10,7 +10,7 @@
 // ---------------------------------------------------------------------------
 
 import { WHEELS, RED, CALL_BETS_EU, colorOf, quadrantIndexOf } from "../src/wheels.js";
-import { spin, resolve, mulberry32, asIntRand, simulateStrategies, betEV, pnlStats, colorStats, parseSequence } from "../src/engine.js";
+import { spin, resolve, mulberry32, asIntRand, simulateStrategies, betEV, pnlStats, colorStats, parseSequence, pocketStakes } from "../src/engine.js";
 
 let failures = 0;
 const ok = (cond, label, detail = "") => {
@@ -105,6 +105,12 @@ const cases = [
   ["dozen 1                (00 wheel)", "american", { "d:1": 1 }, {}, -5.263, 0.5, 800_000, 16],
   ["column 2               (00 wheel)", "american", { "c:2": 1 }, {}, -5.263, 0.5, 800_000, 17],
   ["basket 0-00-1-2-3      (00 wheel)", "american", { "b:basket": 1 }, {}, -7.895, 0.7, 800_000, 18],
+  ["split 1-2  (17:1)      (00 wheel)", "american", { "i:1-2": 1 }, {}, -5.263, 0.7, 1_000_000, 31],
+  ["street 1-2-3 (11:1)    (00 wheel)", "american", { "i:1-2-3": 1 }, {}, -5.263, 0.6, 900_000, 32],
+  ["corner 1-2-4-5 (8:1)   (00 wheel)", "american", { "i:1-2-4-5": 1 }, {}, -5.263, 0.6, 900_000, 33],
+  ["six-line 1..6 (5:1)    (00 wheel)", "american", { "i:1-2-3-4-5-6": 1 }, {}, -5.263, 0.5, 900_000, 34],
+  ["split 1-2  (17:1)       (0 wheel)", "european", { "i:1-2": 1 }, {}, -2.703, 0.7, 1_000_000, 35],
+  ["corner 1-2-4-5 (8:1)    (0 wheel)", "european", { "i:1-2-4-5": 1 }, {}, -2.703, 0.6, 900_000, 36],
   ["straight 17             (0 wheel)", "european", { "s:17": 1 }, {}, -2.703, 1.2, 1_500_000, 19],
   ["quadrant Q1 (10 pkts)   (0 wheel)", "european", { "q:0": 1 }, {}, -2.703, 0.6, 800_000, 20],
   ["red, la partage ON      (0 wheel)", "european", { "e:red": 1 }, { halfBack: true }, -1.351, 0.4, 800_000, 21],
@@ -146,6 +152,11 @@ const evCases = [
   ["dozen 1              (00 wheel)", "american", { "d:1": 1 }, {}, -100 / 19],
   ["column 2             (00 wheel)", "american", { "c:2": 1 }, {}, -100 / 19],
   ["basket 0-00-1-2-3    (00 wheel)", "american", { "b:basket": 1 }, {}, -300 / 38],
+  ["split 1-2            (00 wheel)", "american", { "i:1-2": 1 }, {}, -100 / 19],
+  ["street 1-2-3         (00 wheel)", "american", { "i:1-2-3": 1 }, {}, -100 / 19],
+  ["corner 1-2-4-5       (00 wheel)", "american", { "i:1-2-4-5": 1 }, {}, -100 / 19],
+  ["six-line 1..6        (00 wheel)", "american", { "i:1-2-3-4-5-6": 1 }, {}, -100 / 19],
+  ["split 1-2             (0 wheel)", "european", { "i:1-2": 1 }, {}, -100 / 37],
   ["red, half-back ON    (00 wheel)", "american", { "e:red": 1 }, { halfBack: true }, -100 / 38],
   ["red, half-back OFF   (00 wheel)", "american", { "e:red": 1 }, { halfBack: false }, -200 / 38],
   ["straight 17           (0 wheel)", "european", { "s:17": 1 }, {}, -100 / 37],
@@ -169,6 +180,33 @@ for (const [label, wheelKey, bets, opts, theory] of evCases) {
   ok(near(staked, 7, 1e-9), "betEV stake sums the mix", `staked ${staked}`);
   const mc = edgeOf("american", mix, opts, 1_500_000, 77);
   ok(near(edge, mc, 0.3), "betEV edge matches resolve() Monte-Carlo on the mix", `analytic ${edge.toFixed(4)}% vs MC ${mc.toFixed(4)}%`);
+}
+
+// Inside-bet resolution pays the exact ratio on the covered numbers only.
+{
+  const split = { "i:1-2": 10 };
+  ok(resolve(split, { wheelKey: "american", n: "1" }).returned === 180, "split 1-2 pays 18× when 1 hits (17:1)");
+  ok(resolve(split, { wheelKey: "american", n: "2" }).returned === 180, "split 1-2 pays 18× when 2 hits");
+  ok(resolve(split, { wheelKey: "american", n: "3" }).returned === 0, "split 1-2 loses when 3 hits");
+  ok(resolve({ "i:1-2-4-5": 8 }, { wheelKey: "american", n: "5" }).returned === 72, "corner 1-2-4-5 pays 9× when 5 hits (8:1)");
+  ok(resolve({ "i:1-2-3-4-5-6": 12 }, { wheelKey: "american", n: "6" }).returned === 72, "six-line 1..6 pays 6× when 6 hits (5:1)");
+  ok(resolve({ "i:1-2": 10 }, { wheelKey: "american", n: "0" }).returned === 0, "inside bet loses on 0");
+}
+
+// Per-pocket stake distribution — the "split amount" shown on the wheel. Real
+// math: a chip on k numbers puts amount/k on each of those pockets.
+{
+  const bets = { "s:17": 10, "i:1-2": 10, "i:1-2-4-5": 8, "b:basket": 5 };
+  const { stakes, total } = pocketStakes(bets, "american");
+  // 1: 10/2 + 8/4 + 5/5 = 5 + 2 + 1 = 8 ; 2 same = 8 ; 4,5: 8/4=2 ; 17: 10
+  ok(near(stakes["17"], 10, 1e-9), "pocketStakes: straight 17 → full 10 on pocket 17");
+  ok(near(stakes["1"], 8, 1e-9) && near(stakes["2"], 8, 1e-9), "pocketStakes: pocket 1 & 2 = 5(split)+2(corner)+1(basket) = 8", `${stakes["1"]}/${stakes["2"]}`);
+  ok(near(stakes["4"], 2, 1e-9) && near(stakes["5"], 2, 1e-9), "pocketStakes: corner puts 8/4=2 on 4 & 5");
+  ok(near(stakes["0"], 1, 1e-9) && near(stakes["00"], 1, 1e-9) && near(stakes["3"], 1, 1e-9), "pocketStakes: basket puts 5/5=1 on 0, 00, 3");
+  // total distributed must equal total staked on number bets (conservation)
+  ok(near(total, 10 + 10 + 8 + 5, 1e-9), "pocketStakes: total distributed = total number-bet stake (conserved)", `${total}`);
+  // outside bets are not pocket-localized
+  ok(Object.keys(pocketStakes({ "e:red": 5, "d:1": 5, "q:0": 5 }, "american").stakes).length === 0, "pocketStakes: outside/sector bets excluded");
 }
 
 // --- Part 5: session P&L analytics (pnlStats) --------------------------------
