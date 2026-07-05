@@ -651,6 +651,18 @@ button:focus-visible {
 .ac-cur-num.c-red { background: var(--pocket-red); color: #fff; }
 .ac-cur-num.c-black { background: #202a2f; color: var(--bone); }
 .ac-cur-num.c-green { background: var(--pocket-green); color: #fff; }
+/* the new result flashes in the instant the ball lands */
+.ac-cur-num.flash {
+  animation: acFlash 0.7s cubic-bezier(0.16, 0.7, 0.3, 1) both;
+}
+@keyframes acFlash {
+  0% { transform: scale(0.7); box-shadow: 0 0 0 0 rgba(226, 183, 85, 0.9); }
+  35% { transform: scale(1.12); box-shadow: 0 0 16px 4px rgba(226, 183, 85, 0.7); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(226, 183, 85, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ac-cur-num.flash { animation: none; }
+}
 .ac-cur-meta {
   font-family: var(--font-mono);
   font-size: 9.5px;
