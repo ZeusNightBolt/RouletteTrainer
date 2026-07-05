@@ -41,6 +41,7 @@ export default function App() {
 
   const rng = useRef(null);
   if (!rng.current) rng.current = makeCryptoRng();
+  const cardRef = useRef(null);
   const timers = useRef([]);
   const clearTimers = () => {
     timers.current.forEach(clearTimeout);
@@ -115,6 +116,9 @@ export default function App() {
     setSpinId((s) => s + 1);
     setView("wheel"); // flip to the wheel for the spin…
     setSpinning(true); // …with the result hidden until the ball lands
+    // keep the wheel in view on scrolling layouts (mobile / Safari) so the spin
+    // isn't off-screen when the felt swaps out
+    requestAnimationFrame(() => cardRef.current && cardRef.current.scrollIntoView({ behavior: "smooth", block: "start" }));
     clearTimers();
     timers.current.push(setTimeout(() => setSpinning(false), SPIN_MS)); // reveal on landing
     timers.current.push(setTimeout(() => setView("mat"), SPIN_MS + RESULT_HOLD_MS)); // then back to the felt
@@ -161,7 +165,7 @@ export default function App() {
 
       <main className="grid">
         <section className="col left">
-          <div className="card wheel-card">
+          <div className="card wheel-card" ref={cardRef}>
             <div className="table-head">
               <StatsBanner pnl={pnl} streak={cstats.streak} spins={history.length} />
               <div className="seg view-seg">
@@ -174,52 +178,64 @@ export default function App() {
               </div>
             </div>
 
-            <BetConsole
-              chip={chip}
-              setChip={setChip}
-              onUndo={undoBet}
-              onClear={clearBets}
-              canUndo={betStack.length > 0}
-              hasBets={staked > 0}
-            />
-
-            {view === "mat" ? (
-              <div className="mat-wrap">
-                <RouletteMat wheelKey={wheelKey} bets={bets} onBet={onBet} />
-              </div>
-            ) : (
-              <div className="wheel-wrap">
-                <Wheel
-                  wheelKey={wheelKey}
-                  lastIdx={lastOut ? lastOut.idx : null}
-                  stats={stats}
-                  bets={bets}
-                  stakes={stakes}
-                  onBet={onBet}
-                  spinId={spinId}
-                  spinning={spinning}
-                />
-              </div>
-            )}
-
-            <div className="spin-row">
-              <button className={"btn spin" + (spinning ? " spinning" : "")} onClick={doSpin} disabled={spinning}>
-                {spinning ? "…" : "SPIN"}
-              </button>
-              {view === "wheel" && !spinning && (
-                <button className="btn" onClick={() => setView("mat")}>
-                  ＋ New bets
+            {/* control row (top) — chips/undo/clear + SPIN for the mat, so the
+                spin button is always reachable without scrolling to the bottom */}
+            <div className="control-row">
+              <BetConsole
+                chip={chip}
+                setChip={setChip}
+                onUndo={undoBet}
+                onClear={clearBets}
+                canUndo={betStack.length > 0}
+                hasBets={staked > 0}
+              />
+              {view === "mat" && (
+                <button className="btn spin compact" onClick={doSpin} disabled={spinning}>
+                  SPIN
                 </button>
               )}
-              <span className="spin-note">
-                {spinning
-                  ? "no more bets — the ball is in play…"
-                  : view === "mat"
-                  ? staked > 0
-                    ? `${fmt(staked)} riding · click a line for a split, a corner for 4, edges for streets · shift-click removes`
-                    : "place bets on the felt — numbers, splits, corners, streets, six-lines, outside"
-                  : `result ${lastOut ? lastOut.n : ""} · chips show the split amount landing on each pocket`}
-              </span>
+            </div>
+
+            <div className="view-area">
+              {view === "mat" ? (
+                <div className="mat-wrap">
+                  <RouletteMat wheelKey={wheelKey} bets={bets} onBet={onBet} />
+                </div>
+              ) : (
+                <>
+                  <div className="wheel-wrap">
+                    <Wheel
+                      wheelKey={wheelKey}
+                      lastIdx={lastOut ? lastOut.idx : null}
+                      stats={stats}
+                      bets={bets}
+                      stakes={stakes}
+                      onBet={onBet}
+                      spinId={spinId}
+                      spinning={spinning}
+                    />
+                  </div>
+                  {/* SPIN sits in the middle of the wheel; New bets returns to the felt */}
+                  <button className={"spin-fab" + (spinning ? " spinning" : "")} onClick={doSpin} disabled={spinning}>
+                    {spinning ? "…" : "SPIN"}
+                  </button>
+                  {!spinning && (
+                    <button className="btn new-bets" onClick={() => setView("mat")}>
+                      ＋ New bets
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+
+            <div className="spin-note">
+              {spinning
+                ? "no more bets — the ball is in play…"
+                : view === "mat"
+                ? staked > 0
+                  ? `${fmt(staked)} riding · line = split · corner = 4 · right edge = street · shift-click removes`
+                  : "place bets on the felt — numbers, splits, corners, streets, six-lines, outside"
+                : `result ${lastOut ? lastOut.n : ""} · chips show the split amount landing on each pocket`}
             </div>
           </div>
         </section>
