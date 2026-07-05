@@ -549,7 +549,7 @@ button:focus-visible {
 .mat {
   display: block;
   width: 100%;
-  max-width: 340px;
+  max-width: 380px;
   height: auto;
 }
 .mat-cell,
@@ -565,6 +565,9 @@ button:focus-visible {
 .mat-rect.black { fill: var(--pocket-black); }
 .mat-rect.green { fill: var(--pocket-green); }
 .mat-rect.outside { fill: var(--felt-2); stroke: var(--line); }
+/* RED / BLACK even-money boxes are actually coloured, like a real felt */
+.mat-rect.outside.evred { fill: var(--pocket-red); stroke: #7d2420; }
+.mat-rect.outside.evblack { fill: var(--pocket-black); stroke: #000; }
 .mat-cell:hover .mat-rect {
   filter: brightness(1.28);
 }
@@ -576,10 +579,10 @@ button:focus-visible {
   pointer-events: none;
 }
 .mat-rect.outside + .mat-label {
-  font-size: 14px;
+  font-size: 15px;
 }
-.mat-rect.red-ink + .mat-label { fill: #ff6d5f; }
-.mat-rect.black-ink + .mat-label { fill: var(--bone); }
+.mat-rect.evred + .mat-label,
+.mat-rect.evblack + .mat-label { fill: #fff; }
 /* inside-bet hotspots — invisible until hovered or holding a chip */
 .mat-hot {
   fill: rgba(226, 183, 85, 0.001);

@@ -34,7 +34,7 @@
 
 ```bash
 npm install
-npm run verify    # 115-assertion gate (~10 s)
+npm run verify    # 133-assertion gate (~10 s)
 npm run dev       # Vite dev server
 npm run build     # production bundle → dist/
 npm run preview   # serve dist/
@@ -56,9 +56,11 @@ src/engine.js                 RNG, spin, parseSequence, resolve (incl. inside "i
                               pocketStakes, quadrantStats, colorStats, numberStats, chiSquare,
                               simulateStrategies, pnlStats, recommendBets (Analyze-tab heuristic:
                               momentum + mean-reversion bet slips; descriptive, makes no edge claim)
-src/components/RouletteMat.jsx VERTICAL felt betting surface: straight/split/street/corner/six-line
-                              hotspots (geometry-derived) + dozens (side bars)/columns/evens/basket;
-                              + dealer puck (dolly) on the winning number after a spin (winner prop)
+src/components/RouletteMat.jsx VERTICAL AC-felt betting surface: even-money outside bets down the
+                              LEFTMOST column (1-18/EVEN/RED/BLACK/ODD/19-36, RED+BLACK coloured),
+                              dozens beside them, 1-36 grid, 2:1 columns on the bottom; geometry-derived
+                              split/street/corner/six-line hotspots + basket; + dealer puck (dolly) on
+                              the winning number after a spin (winner prop)
 src/components/Wheel.jsx      SVG wheel AS betting surface (pockets = straight-up, ring = sector);
                               ball orbits + drops/taps into the pocket (result hidden until it lands,
                               gated by App's `spinning`), then shows per-pocket split amounts + highlight
