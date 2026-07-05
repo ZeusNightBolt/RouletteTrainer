@@ -6,7 +6,8 @@ import { WHEELS, colorOf, quadrantIndexOf } from "../wheels.js";
 // straight-up bets, the outer quadrant ring takes sector bets.
 const C = 320;
 const R_HUB = 148;
-const R_BALL = 160; // groove between hub and pockets, like a settled ball
+const R_BALL = 160; // groove between hub and pockets, where the ball finally seats
+const R_TRACK = 248; // outer ball-track radius the ball rides while spinning
 const R_IN = 172;
 const R_OUT = 278;
 const R_LBL = 251;
@@ -47,7 +48,7 @@ function ChipDot({ r, ang, amount }) {
   );
 }
 
-export default function Wheel({ wheelKey, lastIdx, stats, bets = {}, stakes = {}, onBet, spinId = 0 }) {
+export default function Wheel({ wheelKey, lastIdx, stats, bets = {}, stakes = {}, onBet, spinId = 0, spinning = false }) {
   const wheel = WHEELS[wheelKey];
   const N = wheel.seq.length;
   const step = 360 / N;
@@ -102,9 +103,11 @@ export default function Wheel({ wheelKey, lastIdx, stats, bets = {}, stakes = {}
       {/* pockets — chip shows the allocated stake landing on this pocket from
           ALL number bets (a $10 split shows $5 here and $5 on its partner) */}
       {wheel.seq.map((n, i) => {
+        // don't mark the winning pocket until the ball has landed — otherwise it
+        // telegraphs the result before the drop
+        const settled = i === lastIdx && !spinning;
         const a0 = i * step - step / 2;
         const ang = i * step;
-        const isLast = i === lastIdx;
         const amt = stakes[n] || 0;
         const [lx, ly] = polar(R_LBL, ang);
         return (
@@ -113,9 +116,9 @@ export default function Wheel({ wheelKey, lastIdx, stats, bets = {}, stakes = {}
             <path
               d={annular(R_IN, R_OUT, a0, a0 + step)}
               fill={POCKET_FILL[colorOf(n)]}
-              stroke={isLast ? "var(--bone)" : "#0b1310"}
-              strokeWidth={isLast ? 2.5 : 1}
-              filter={isLast ? "url(#hitGlow)" : undefined}
+              stroke={settled ? "var(--bone)" : "#0b1310"}
+              strokeWidth={settled ? 2.5 : 1}
+              filter={settled ? "url(#hitGlow)" : undefined}
             />
             <text x={lx} y={ly} className="pocket-label" textAnchor="middle" dominantBaseline="middle" transform={`rotate(${ang} ${lx} ${ly})`}>
               {n}
@@ -160,20 +163,26 @@ export default function Wheel({ wheelKey, lastIdx, stats, bets = {}, stakes = {}
         );
       })}
 
-      {/* ball orbits and settles on the result — the group rotates around the
-          wheel centre; keying it on spinId restarts the landing animation. */}
+      {/* ball — an OUTER group orbits it around the wheel (decelerating), an
+          INNER group drops it radially from the ball-track into the pocket with
+          a couple of taps. Keyed on spinId so each spin restarts the sequence. */}
       {lastIdx != null && (
         <g
           key={spinId}
           className="ball-orbit"
           style={{ "--land": `${ballAngle}deg`, transform: `rotate(${ballAngle}deg)`, transformBox: "view-box", transformOrigin: `${C}px ${C}px` }}
         >
-          <circle cx={C} cy={C - R_BALL} r="7.5" className="ball" filter="url(#ballShadow)" />
+          <g
+            className="ball-drop"
+            style={{ "--r-seat": `${-R_BALL}px`, "--r-track": `${-R_TRACK}px`, transform: `translateY(${-R_BALL}px)` }}
+          >
+            <circle cx={C} cy={C} r="7.5" className="ball" filter="url(#ballShadow)" />
+          </g>
         </g>
       )}
 
-      {/* winning-pocket highlight — a gold outline that lights up and pulses
-          once the ball settles (delayed by the spin duration in CSS). */}
+      {/* winning-pocket highlight — lights up as the ball drops into the hole
+          (CSS delay ≈ 82% of the spin), then pulses. */}
       {lastIdx != null && (
         <path
           key={"hl" + spinId}
@@ -189,7 +198,7 @@ export default function Wheel({ wheelKey, lastIdx, stats, bets = {}, stakes = {}
       {/* hub readout */}
       <circle cx={C} cy={C} r={R_HUB} fill="url(#hubGrad)" stroke="var(--line)" strokeWidth="1.5" />
       <circle cx={C} cy={C} r={R_HUB - 10} fill="none" stroke="var(--line)" strokeWidth="0.75" opacity="0.6" />
-      {last ? (
+      {last && !spinning ? (
         <>
           <text x={C} y={C - 46} className="hub-caption" textAnchor="middle">
             LAST
@@ -199,6 +208,15 @@ export default function Wheel({ wheelKey, lastIdx, stats, bets = {}, stakes = {}
           </text>
           <text x={C} y={C + 74} className="hub-quadrant" textAnchor="middle" fill={Q_COLORS[lastQ]}>
             {wheel.quadrants[lastQ].id} · {lastColor.toUpperCase()}
+          </text>
+        </>
+      ) : spinning ? (
+        <>
+          <text x={C} y={C - 6} className="hub-spin" textAnchor="middle">
+            rien ne va plus
+          </text>
+          <text x={C} y={C + 26} className="hub-spin-sub" textAnchor="middle">
+            ball in play
           </text>
         </>
       ) : (

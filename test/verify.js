@@ -10,7 +10,7 @@
 // ---------------------------------------------------------------------------
 
 import { WHEELS, RED, CALL_BETS_EU, colorOf, quadrantIndexOf } from "../src/wheels.js";
-import { spin, resolve, mulberry32, asIntRand, simulateStrategies, betEV, pnlStats, colorStats, parseSequence, pocketStakes } from "../src/engine.js";
+import { spin, resolve, mulberry32, asIntRand, simulateStrategies, betEV, pnlStats, colorStats, parseSequence, pocketStakes, numberStats } from "../src/engine.js";
 
 let failures = 0;
 const ok = (cond, label, detail = "") => {
@@ -258,6 +258,28 @@ console.log("\n[5/5] Session P&L analytics (pnlStats on a hand-built stream)");
     ok(near(c.reduce((s, x) => s + x.p, 0), 1, 1e-9), `${wk}: color probabilities sum to 1`);
     ok(c.every((x) => x.hits === 0 && x.drought === 0 && x.share === 0), `${wk}: empty history → zeroed color stats`);
   }
+}
+
+// Number telemetry (Atlantic City results board) — per-pocket hits/drought and
+// the tote-board tallies, all checked by hand on a known sequence.
+{
+  const { history } = parseSequence("american", "7 7 2 0 32 7");
+  const s = numberStats("american", history);
+  ok(s.total === 6, "numberStats: total 6");
+  ok(s.red === 4 && s.black === 1 && s.green === 1, "numberStats: 4 red / 1 black / 1 green", `${s.red}/${s.black}/${s.green}`);
+  ok(s.odd === 3 && s.even === 2, "numberStats: 3 odd / 2 even (zeros excluded)", `${s.odd}/${s.even}`);
+  ok(s.low === 4 && s.high === 1, "numberStats: 4 low / 1 high", `${s.low}/${s.high}`);
+  ok(s.dozens.join(",") === "4,0,1", "numberStats: dozens [4,0,1]", s.dozens.join(","));
+  ok(s.columns.join(",") === "3,2,0", "numberStats: columns [3,2,0]", s.columns.join(","));
+  const by = Object.fromEntries(s.perNumber.map((x) => [x.n, x]));
+  ok(by["7"].hits === 3 && by["7"].drought === 0, "numberStats: 7 hit 3× and is current (drought 0)");
+  ok(by["2"].drought === 3, "numberStats: 2's drought is 3", `${by["2"].drought}`);
+  ok(by["1"].hits === 0 && by["1"].drought === 6, "numberStats: an unhit number has drought = spin count");
+  ok(s.hot[0].n === "7" && s.hot[0].hits === 3, "numberStats: hottest number is 7 (3 hits)");
+  ok(s.cold[0].drought === 6, "numberStats: coldest number has never hit (drought 6)");
+  ok(s.perNumber.length === 38, "numberStats: covers all 38 american pockets");
+  const empty = numberStats("european", []);
+  ok(empty.total === 0 && empty.hot.length === 0 && empty.perNumber.every((x) => x.hits === 0), "numberStats: empty history → zeroed, no hot list, no throw");
 }
 
 // Manual sequence parser — the Analyze tab feeds pasted numbers through this and

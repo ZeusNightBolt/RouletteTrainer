@@ -327,6 +327,69 @@ export function colorStats(wheelKey, history) {
   return { colors: out, streak };
 }
 
+// Full-board number telemetry for the Atlantic City results display: per-pocket
+// hit count and current drought, plus the standard tote-board tallies (red/black/
+// green, odd/even, low/high, the three dozens and columns) and hot/cold lists.
+// Descriptive only — same honesty contract as everything else. "Hot" = most hits,
+// "cold" = longest current absence; neither says anything about the next spin.
+export function numberStats(wheelKey, history) {
+  const wheel = WHEELS[wheelKey];
+  const N = history.length;
+  const hits = {};
+  const last = {};
+  for (const n of wheel.seq) {
+    hits[n] = 0;
+    last[n] = -1;
+  }
+  let red = 0;
+  let black = 0;
+  let green = 0;
+  let odd = 0;
+  let even = 0;
+  let low = 0;
+  let high = 0;
+  const dozens = [0, 0, 0];
+  const columns = [0, 0, 0];
+
+  history.forEach((h, i) => {
+    if (hits[h.n] === undefined) return; // ignore anything not on this wheel
+    hits[h.n]++;
+    last[h.n] = i;
+    if (h.color === "red") red++;
+    else if (h.color === "black") black++;
+    else {
+      green++;
+      return;
+    }
+    const v = Number(h.n);
+    if (v % 2) odd++;
+    else even++;
+    if (v <= 18) low++;
+    else high++;
+    dozens[Math.ceil(v / 12) - 1]++;
+    columns[((v - 1) % 3)]++;
+  });
+
+  const perNumber = wheel.seq.map((n) => ({
+    n,
+    hits: hits[n],
+    drought: last[n] < 0 ? N : N - 1 - last[n],
+  }));
+
+  // hot: most hits (ties broken by shorter drought). cold: longest current
+  // absence (ties broken by fewer hits). Only meaningful once numbers have hit.
+  const hot = perNumber
+    .filter((x) => x.hits > 0)
+    .sort((a, b) => b.hits - a.hits || a.drought - b.drought)
+    .slice(0, 6);
+  const cold = perNumber
+    .slice()
+    .sort((a, b) => b.drought - a.drought || a.hits - b.hits)
+    .slice(0, 6);
+
+  return { total: N, red, black, green, odd, even, low, high, dozens, columns, perNumber, hot, cold };
+}
+
 // Pearson chi-square against the fair-wheel expectation (unequal p_i because
 // the quadrant split is 9/10/9/10 or 10/9/9/9). df = 3.
 // Critical values: 7.815 (alpha 0.05), 11.345 (alpha 0.01).
