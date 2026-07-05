@@ -10,10 +10,7 @@ import QuadrantPanel from "./components/QuadrantPanel.jsx";
 import FallacyLab from "./components/FallacyLab.jsx";
 import SessionAnalytics from "./components/SessionAnalytics.jsx";
 import SequenceAnalyzer from "./components/SequenceAnalyzer.jsx";
-import { fmt, SPIN_MS } from "./ui.js";
-
-// how long the wheel lingers on the result before the felt returns
-const RESULT_HOLD_MS = 1500;
+import { fmt, SPIN_MS, RESULT_HOLD_MS, pickSpinWord } from "./ui.js";
 
 const TABS = [
   ["telemetry", "Telemetry"],
@@ -36,6 +33,7 @@ export default function App() {
   const [lastOut, setLastOut] = useState(null);
   const [spinId, setSpinId] = useState(0); // increments per spin to retrigger animations
   const [spinning, setSpinning] = useState(false); // ball in flight — result hidden until it lands
+  const [spinWord, setSpinWord] = useState("Rolling"); // playful in-flight caption
   const [view, setView] = useState("mat"); // "mat" (place bets) | "wheel" (spin result)
   const [tab, setTab] = useState("telemetry");
 
@@ -114,6 +112,7 @@ export default function App() {
     setRecords((r) => [...r, { staked: res.staked, returned: res.returned, net: res.net, ev }]);
     setLastOut(out);
     setSpinId((s) => s + 1);
+    setSpinWord(pickSpinWord());
     setView("wheel"); // flip to the wheel for the spin…
     setSpinning(true); // …with the result hidden until the ball lands
     // keep the wheel in view on scrolling layouts (mobile / Safari) so the spin
@@ -213,12 +212,9 @@ export default function App() {
                       onBet={onBet}
                       spinId={spinId}
                       spinning={spinning}
+                      spinWord={spinWord}
                     />
                   </div>
-                  {/* SPIN sits in the middle of the wheel; New bets returns to the felt */}
-                  <button className={"spin-fab" + (spinning ? " spinning" : "")} onClick={doSpin} disabled={spinning}>
-                    {spinning ? "…" : "SPIN"}
-                  </button>
                   {!spinning && (
                     <button className="btn new-bets" onClick={() => setView("mat")}>
                       ＋ New bets

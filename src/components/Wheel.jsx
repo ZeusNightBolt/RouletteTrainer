@@ -48,7 +48,7 @@ function ChipDot({ r, ang, amount }) {
   );
 }
 
-export default function Wheel({ wheelKey, lastIdx, stats, bets = {}, stakes = {}, onBet, spinId = 0, spinning = false }) {
+export default function Wheel({ wheelKey, lastIdx, stats, bets = {}, stakes = {}, onBet, spinId = 0, spinning = false, spinWord = "Rolling" }) {
   const wheel = WHEELS[wheelKey];
   const N = wheel.seq.length;
   const step = 360 / N;
@@ -212,11 +212,12 @@ export default function Wheel({ wheelKey, lastIdx, stats, bets = {}, stakes = {}
         </>
       ) : spinning ? (
         <>
-          <text x={C} y={C - 6} className="hub-spin" textAnchor="middle">
-            rien ne va plus
+          <text x={C} y={C - 4} className="hub-spin" textAnchor="middle">
+            {spinWord}
+            <tspan className="hub-spin-dots">…</tspan>
           </text>
-          <text x={C} y={C + 26} className="hub-spin-sub" textAnchor="middle">
-            ball in play
+          <text x={C} y={C + 30} className="hub-spin-sub" textAnchor="middle">
+            rien ne va plus · no more bets
           </text>
         </>
       ) : (

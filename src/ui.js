@@ -8,6 +8,37 @@
 // two in lockstep by reading from here.
 export const SPIN_MS = 4200;
 
+// how long the winning result stays on the wheel before the felt returns
+export const RESULT_HOLD_MS = 5000;
+
+// playful "the ball is in play" verbs (Claude-Code-style gerunds) shown while
+// the wheel spins. Pick one per spin with pickSpinWord().
+export const SPIN_WORDS = [
+  "Rolling",
+  "Spinning",
+  "Whirring",
+  "Gallivanting",
+  "Skedaddling",
+  "Galloping",
+  "Tumbling",
+  "Moseying",
+  "Careening",
+  "Twirling",
+  "Bouncing",
+  "Ricocheting",
+  "Rattling",
+  "Scurrying",
+  "Meandering",
+  "Cavorting",
+  "Frolicking",
+  "Orbiting",
+  "Traipsing",
+  "Sashaying",
+  "Vibing",
+  "Noodling",
+];
+export const pickSpinWord = () => SPIN_WORDS[Math.floor(Math.random() * SPIN_WORDS.length)];
+
 // quadrant → CSS class (palette lives in styles.css: --q1..--q4)
 export const Q_CLASS = ["q1", "q2", "q3", "q4"];
 
