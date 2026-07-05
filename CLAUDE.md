@@ -45,7 +45,8 @@ npm run preview   # serve dist/
 ```
 index.html                    dark-root shell, fonts
 src/main.jsx                  entry
-src/ui.js                     shared UI constants + formatters (SPIN_MS, Q_CLASS, CHIPS, fmt/signed/pct)
+src/ui.js                     shared UI constants + formatters (SPIN_MS, RESULT_HOLD_MS, SPIN_WORDS,
+                              Q_CLASS, CHIPS, fmt/signed/pct)
 src/App.jsx                   state (wheel, bets + undo stack, bankroll, history, log)
                               + flow: vertical MAT + banner → SPIN flips to WHEEL → auto-reverts
                               to felt; AC results board + tabbed panel on the right

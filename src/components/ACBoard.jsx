@@ -11,7 +11,7 @@ const colorClass = (n) => colorOf(n);
 export default function ACBoard({ wheelKey, history, nstats }) {
   const wheel = WHEELS[wheelKey];
   const N = history.length;
-  const recent = history.slice(-24).reverse();
+  const recent = history.slice(-16).reverse();
   const last = N ? history[N - 1] : null;
   const { red, black, green, odd, even, low, high, dozens, columns, hot, cold } = nstats;
 
