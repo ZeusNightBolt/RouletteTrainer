@@ -53,9 +53,44 @@ function Chip({ cx, cy, amount }) {
   );
 }
 
-export default function RouletteMat({ wheelKey, bets, onBet }) {
+// The rectangle of the cell for a given pocket, so the dealer puck can sit dead
+// centre on the winning number (0/00 live in the top row at half width).
+function cellRectOf(n, american) {
+  if (n === "0") return { x: GX, y: 0, w: american ? GRID_W / 2 : GRID_W, h: ZH };
+  if (n === "00") return { x: GX + GRID_W / 2, y: 0, w: GRID_W / 2, h: ZH };
+  const v = Number(n);
+  if (!Number.isInteger(v) || v < 1 || v > 36) return null;
+  const r = Math.floor((v - 1) / 3);
+  const c = (v - 1) % 3;
+  return { x: GX + c * CW, y: GY + r * CH, w: CW, h: CH };
+}
+
+// Dealer's dolly: a frosted translucent marker the dealer drops on the winning
+// number after the ball lands (the number still reads through it). Purely a
+// result marker — no bet, no click target.
+function DealerPuck({ cx, cy }) {
+  const rx = 13;
+  const ry = 4.6;
+  const h = 6.5; // half the cylinder body height
+  const top = cy - h;
+  const bot = cy + h;
+  return (
+    <g className="mat-puck" pointerEvents="none">
+      <ellipse cx={cx} cy={bot + 2.5} rx={rx + 3} ry={ry - 1} className="puck-shadow" />
+      <path
+        d={`M ${cx - rx} ${top} L ${cx - rx} ${bot} A ${rx} ${ry} 0 0 0 ${cx + rx} ${bot} L ${cx + rx} ${top} A ${rx} ${ry} 0 0 1 ${cx - rx} ${top} Z`}
+        className="puck-body"
+      />
+      <ellipse cx={cx} cy={top} rx={rx} ry={ry} className="puck-top" />
+      <ellipse cx={cx} cy={top - 1.4} rx={rx * 0.4} ry={ry * 0.42} className="puck-glint" />
+    </g>
+  );
+}
+
+export default function RouletteMat({ wheelKey, bets, onBet, winner = null }) {
   const wheel = WHEELS[wheelKey];
   const american = wheelKey === "american";
+  const winRect = winner != null ? cellRectOf(winner, american) : null;
 
   // --- inside-bet hotspots from the grid geometry --------------------------
   const spots = [];
@@ -204,6 +239,15 @@ export default function RouletteMat({ wheelKey, bets, onBet }) {
           <Chip cx={s.cx} cy={s.cy} amount={bets[s.key]} />
         </g>
       ))}
+
+      {/* dealer puck on the winning number after the ball lands (drawn last so it
+          sits on top of the felt + any chips, just like the real dolly) */}
+      {winRect && (
+        <g className="mat-winner" pointerEvents="none">
+          <rect x={winRect.x + 1} y={winRect.y + 1} width={winRect.w - 2} height={winRect.h - 2} rx="4" className="mat-winner-cell" />
+          <DealerPuck cx={winRect.x + winRect.w / 2} cy={winRect.y + winRect.h / 2} />
+        </g>
+      )}
     </svg>
   );
 }

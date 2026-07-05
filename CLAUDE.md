@@ -47,21 +47,25 @@ index.html                    dark-root shell, fonts
 src/main.jsx                  entry
 src/ui.js                     shared UI constants + formatters (SPIN_MS, RESULT_HOLD_MS, SPIN_WORDS,
                               Q_CLASS, CHIPS, fmt/signed/pct)
-src/App.jsx                   state (wheel, bets + undo stack, bankroll, history, log)
+src/App.jsx                   state (wheel, bets + undo stack, bankroll, history, log, settled result)
                               + flow: vertical MAT + banner → SPIN flips to WHEEL → auto-reverts
-                              to felt; AC results board + tabbed panel on the right
+                              to felt and PAUSES on the result (dealer puck on the winning number +
+                              net-this-round bar) until the next round; AC board + tabs on the right
 src/wheels.js                 wheel data + quadrant helpers (SOURCE OF TRUTH)
 src/engine.js                 RNG, spin, parseSequence, resolve (incl. inside "i:" bets), betEV,
                               pocketStakes, quadrantStats, colorStats, numberStats, chiSquare,
                               simulateStrategies, pnlStats, recommendBets (Analyze-tab heuristic:
                               momentum + mean-reversion bet slips; descriptive, makes no edge claim)
 src/components/RouletteMat.jsx VERTICAL felt betting surface: straight/split/street/corner/six-line
-                              hotspots (geometry-derived) + dozens (side bars)/columns/evens/basket
+                              hotspots (geometry-derived) + dozens (side bars)/columns/evens/basket;
+                              + dealer puck (dolly) on the winning number after a spin (winner prop)
 src/components/Wheel.jsx      SVG wheel AS betting surface (pockets = straight-up, ring = sector);
                               ball orbits + drops/taps into the pocket (result hidden until it lands,
                               gated by App's `spinning`), then shows per-pocket split amounts + highlight
 src/components/BetConsole.jsx chip selector + undo/clear, docked above the mat/wheel
 src/components/StatsBanner.jsx compact session banner (spins / P&L / hit rate / streak) above the mat
+src/components/ResultBar.jsx  paused-result bar over the felt: landed number/colour/sector + net this
+                              round (all bets); holds until the next round begins
 src/components/ACBoard.jsx    Atlantic City results board: current number, recent run, red/black tote,
                               odd-even/low-high/dozen/column tallies, hot & cold numbers
 src/components/ResultsTicker.jsx  recent-numbers marquee (used by the Analyze tab)
