@@ -10,6 +10,7 @@ import QuadrantPanel from "./components/QuadrantPanel.jsx";
 import FallacyLab from "./components/FallacyLab.jsx";
 import SessionAnalytics from "./components/SessionAnalytics.jsx";
 import SequenceAnalyzer from "./components/SequenceAnalyzer.jsx";
+import ResultBar from "./components/ResultBar.jsx";
 import { fmt, SPIN_MS, RESULT_HOLD_MS, pickSpinWord } from "./ui.js";
 
 const TABS = [
@@ -35,6 +36,7 @@ export default function App() {
   const [spinning, setSpinning] = useState(false); // ball in flight — result hidden until it lands
   const [spinWord, setSpinWord] = useState("Rolling"); // playful in-flight caption
   const [view, setView] = useState("mat"); // "mat" (place bets) | "wheel" (spin result)
+  const [result, setResult] = useState(null); // settled spin { n, color, q, net, staked, returned, no } — drives the dealer puck + net pause on the felt
   const [tab, setTab] = useState("telemetry");
 
   const rng = useRef(null);
@@ -64,16 +66,19 @@ export default function App() {
     setHistory([]);
     setRecords([]);
     setLastOut(null);
+    setResult(null);
     setView("mat");
     setSpinning(false);
     clearTimers();
     pushLog(`Wheel switched to ${WHEELS[key].label} — session stats reset.`);
   }
 
-  // every bet edit snapshots the previous state so Undo can walk back
+  // every bet edit snapshots the previous state so Undo can walk back. Touching
+  // the felt begins the next round, so the previous spin's puck + net clear.
   function applyBets(next) {
     setBetStack((s) => [...s.slice(-49), bets]);
     setBets(next);
+    setResult(null);
   }
 
   function onBet(key, e) {
@@ -118,6 +123,7 @@ export default function App() {
     setSpinWord(pickSpinWord());
     setView("wheel");
     setSpinning(true);
+    setResult(null); // clear the previous round's puck/net while this ball is in flight
     setBetStack([]); // undo applies to edits since the last spin
     // keep the wheel in view on scrolling layouts (mobile / Safari)
     requestAnimationFrame(() => cardRef.current && cardRef.current.scrollIntoView({ behavior: "smooth", block: "start" }));
@@ -132,6 +138,9 @@ export default function App() {
         setHistory((h) => [...h, { n: out.n, idx: out.idx, q: out.q, color: out.color }]);
         setRecords((r) => [...r, { staked: res.staked, returned: res.returned, net: res.net, ev }]);
         setSpinning(false);
+        // freeze the settled outcome so the felt can show the dealer puck on the
+        // winning number and the net for this round when the view returns to it
+        setResult({ n: out.n, color: out.color, q: out.q, idx: out.idx, net: res.net, staked: res.staked, returned: res.returned, no: spinNo });
         const qid = WHEELS[wheelKey].quadrants[out.q].id;
         const head = `#${spinNo}  ${out.n} ${out.color.toUpperCase()} · ${qid}`;
         pushLog(
@@ -210,9 +219,12 @@ export default function App() {
 
             <div className="view-area">
               {view === "mat" ? (
-                <div className="mat-wrap">
-                  <RouletteMat wheelKey={wheelKey} bets={bets} onBet={onBet} />
-                </div>
+                <>
+                  {result && <ResultBar result={result} wheelKey={wheelKey} />}
+                  <div className="mat-wrap">
+                    <RouletteMat wheelKey={wheelKey} bets={bets} onBet={onBet} winner={result ? result.n : null} />
+                  </div>
+                </>
               ) : (
                 <>
                   <div className="wheel-wrap">
@@ -241,7 +253,9 @@ export default function App() {
               {spinning
                 ? "no more bets — the ball is in play…"
                 : view === "mat"
-                ? staked > 0
+                ? result
+                  ? `puck marks ${result.n} — SPIN to repeat the same bets, or touch the felt to start a new round`
+                  : staked > 0
                   ? `${fmt(staked)} riding · line = split · corner = 4 · right edge = street · shift-click removes`
                   : "place bets on the felt — numbers, splits, corners, streets, six-lines, outside"
                 : `result ${lastOut ? lastOut.n : ""} · chips show the split amount landing on each pocket`}
