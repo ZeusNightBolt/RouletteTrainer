@@ -6,7 +6,7 @@
 // the `--spin-dur` custom property (App sets it from this), and the JS timer
 // that reveals the result after the ball lands uses the same value. Keep the
 // two in lockstep by reading from here.
-export const SPIN_MS = 4200;
+export const SPIN_MS = 16800;
 
 // how long the winning result stays on the wheel before the felt returns
 export const RESULT_HOLD_MS = 5000;

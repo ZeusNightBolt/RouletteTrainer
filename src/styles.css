@@ -382,35 +382,36 @@ button:focus-visible {
    ui.js). The hub reveal, pocket flash and ticker pop are all timed as fractions
    of it so the choreography lands exactly when the ball seats. */
 :root {
-  --spin-dur: 4.2s;
+  --spin-dur: 16.8s;
 }
 
 /* ORBIT — the ball circles the wheel and decelerates to a long, natural stop.
-   A curve that stays fast then eases hard late reads like a real ball losing
-   momentum rather than a constant robotic roll. ~6 turns. */
+   Many revolutions over a long spin: fast at first, still creeping toward the
+   pocket as it drops. ~16 turns. */
 @keyframes ballOrbit {
-  from { transform: rotate(calc(var(--land) - 2160deg)); }
+  from { transform: rotate(calc(var(--land) - 5760deg)); }
   to { transform: rotate(var(--land)); }
 }
 .ball-orbit {
-  animation: ballOrbit var(--spin-dur) cubic-bezier(0.07, 0.62, 0.12, 1) both;
+  animation: ballOrbit var(--spin-dur) cubic-bezier(0.16, 0.5, 0.22, 1) both;
 }
 
-/* DROP — the ball rides the outer track, then (as it slows) falls off the rim
-   and taps across the frets — overshoot, rebound, smaller tap — before seating
-   in the pocket. This radial motion is what makes it look like it lands. */
+/* DROP — the ball rides the outer track for most of the spin, then (as it slows)
+   falls off the rim in the last stretch and taps across the frets — overshoot,
+   rebound, smaller tap — before seating. Keeping the drop late means the ball
+   spins on the track a long time and only "lands" near the end. */
 @keyframes ballDrop {
-  0%   { transform: translateY(var(--r-track)); }
-  46%  { transform: translateY(calc(var(--r-track) + 3px)); } /* still on the track */
-  62%  { transform: translateY(calc(var(--r-seat) + 12px)); } /* drops in, overshoots */
-  72%  { transform: translateY(calc(var(--r-seat) - 20px)); } /* bounces back out (flip) */
-  81%  { transform: translateY(calc(var(--r-seat) + 8px)); }  /* taps in again */
-  89%  { transform: translateY(calc(var(--r-seat) - 8px)); }  /* small rebound */
-  95%  { transform: translateY(calc(var(--r-seat) + 3px)); }  /* settle wobble */
-  100% { transform: translateY(var(--r-seat)); }              /* seated */
+  0%    { transform: translateY(var(--r-track)); }
+  74%   { transform: translateY(calc(var(--r-track) + 4px)); } /* still on the track */
+  83%   { transform: translateY(calc(var(--r-seat) + 12px)); } /* drops in, overshoots */
+  89%   { transform: translateY(calc(var(--r-seat) - 18px)); } /* bounces back out (flip) */
+  93%   { transform: translateY(calc(var(--r-seat) + 8px)); }  /* taps in again */
+  96%   { transform: translateY(calc(var(--r-seat) - 7px)); }  /* small rebound */
+  98.5% { transform: translateY(calc(var(--r-seat) + 3px)); }  /* settle wobble */
+  100%  { transform: translateY(var(--r-seat)); }              /* seated */
 }
 .ball-drop {
-  animation: ballDrop var(--spin-dur) cubic-bezier(0.33, 0, 0.4, 1) both;
+  animation: ballDrop var(--spin-dur) cubic-bezier(0.3, 0, 0.5, 1) both;
 }
 
 @keyframes hubPop {
@@ -445,7 +446,9 @@ button:focus-visible {
 }
 .pocket-highlight {
   filter: drop-shadow(0 0 6px var(--gold));
-  animation: pocketFlash calc(var(--spin-dur) * 0.42) calc(var(--spin-dur) * 0.6) ease-out both;
+  /* lights up only in the final stretch, as the ball drops off the track into
+     the pocket — not while it's still circling */
+  animation: pocketFlash calc(var(--spin-dur) * 0.26) calc(var(--spin-dur) * 0.74) ease-out both;
 }
 @keyframes tickPop {
   from { opacity: 0; transform: translateY(-6px) scale(0.82); }
@@ -651,6 +654,18 @@ button:focus-visible {
 .ac-cur-num.c-red { background: var(--pocket-red); color: #fff; }
 .ac-cur-num.c-black { background: #202a2f; color: var(--bone); }
 .ac-cur-num.c-green { background: var(--pocket-green); color: #fff; }
+/* the new result flashes in the instant the ball lands */
+.ac-cur-num.flash {
+  animation: acFlash 0.7s cubic-bezier(0.16, 0.7, 0.3, 1) both;
+}
+@keyframes acFlash {
+  0% { transform: scale(0.7); box-shadow: 0 0 0 0 rgba(226, 183, 85, 0.9); }
+  35% { transform: scale(1.12); box-shadow: 0 0 16px 4px rgba(226, 183, 85, 0.7); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(226, 183, 85, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ac-cur-num.flash { animation: none; }
+}
 .ac-cur-meta {
   font-family: var(--font-mono);
   font-size: 9.5px;

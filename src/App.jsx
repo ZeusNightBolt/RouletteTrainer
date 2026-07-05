@@ -107,28 +107,41 @@ export default function App() {
     const out = spin(wheelKey, rng.current);
     const res = resolve(bets, out, { halfBack });
     const ev = betEV(bets, wheelKey, { halfBack }).ev; // exact expected net of these bets
-    setBank((b) => b - res.staked + res.returned);
-    setHistory((h) => [...h, { n: out.n, idx: out.idx, q: out.q, color: out.color }]);
-    setRecords((r) => [...r, { staked: res.staked, returned: res.returned, net: res.net, ev }]);
+    const spinNo = history.length + 1;
+
+    // Phase 1 — start the animation. Only `lastOut` (where the ball lands) is set
+    // now, so the wheel can spin to the right pocket. The result is NOT committed
+    // to history/records/bankroll/log yet, so the board, banner, telemetry, and
+    // bankroll all stay on the previous state until the ball actually lands.
     setLastOut(out);
     setSpinId((s) => s + 1);
     setSpinWord(pickSpinWord());
-    setView("wheel"); // flip to the wheel for the spin…
-    setSpinning(true); // …with the result hidden until the ball lands
-    // keep the wheel in view on scrolling layouts (mobile / Safari) so the spin
-    // isn't off-screen when the felt swaps out
-    requestAnimationFrame(() => cardRef.current && cardRef.current.scrollIntoView({ behavior: "smooth", block: "start" }));
-    clearTimers();
-    timers.current.push(setTimeout(() => setSpinning(false), SPIN_MS)); // reveal on landing
-    timers.current.push(setTimeout(() => setView("mat"), SPIN_MS + RESULT_HOLD_MS)); // then back to the felt
+    setView("wheel");
+    setSpinning(true);
     setBetStack([]); // undo applies to edits since the last spin
-    const qid = WHEELS[wheelKey].quadrants[out.q].id;
-    const head = `#${history.length + 1}  ${out.n} ${out.color.toUpperCase()} · ${qid}`;
-    pushLog(
-      res.staked
-        ? `${head} — staked ${fmt(res.staked)}, returned ${fmt(res.returned)} (net ${res.net >= 0 ? "+" : ""}${fmt(res.net)})`
-        : `${head} — tracking only, no bets`
+    // keep the wheel in view on scrolling layouts (mobile / Safari)
+    requestAnimationFrame(() => cardRef.current && cardRef.current.scrollIntoView({ behavior: "smooth", block: "start" }));
+
+    // Phase 2 — the ball lands: NOW reveal the number and commit the outcome to
+    // the board / bankroll / history, so the whole table flashes the result at
+    // the same moment the ball seats in the pocket.
+    clearTimers();
+    timers.current.push(
+      setTimeout(() => {
+        setBank((b) => b - res.staked + res.returned);
+        setHistory((h) => [...h, { n: out.n, idx: out.idx, q: out.q, color: out.color }]);
+        setRecords((r) => [...r, { staked: res.staked, returned: res.returned, net: res.net, ev }]);
+        setSpinning(false);
+        const qid = WHEELS[wheelKey].quadrants[out.q].id;
+        const head = `#${spinNo}  ${out.n} ${out.color.toUpperCase()} · ${qid}`;
+        pushLog(
+          res.staked
+            ? `${head} — staked ${fmt(res.staked)}, returned ${fmt(res.returned)} (net ${res.net >= 0 ? "+" : ""}${fmt(res.net)})`
+            : `${head} — tracking only, no bets`
+        );
+      }, SPIN_MS)
     );
+    timers.current.push(setTimeout(() => setView("mat"), SPIN_MS + RESULT_HOLD_MS)); // then back to the felt
   }
 
   return (

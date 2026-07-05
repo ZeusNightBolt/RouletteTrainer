@@ -46,11 +46,12 @@ export default function ACBoard({ wheelKey, history, nstats }) {
         <span className="ac-count">{N.toLocaleString()} spins · {wheel.label}</span>
       </div>
 
-      {/* current number */}
+      {/* current number — keyed on the spin count so it flashes in when a new
+          result lands (the board only updates once the ball seats, see App) */}
       <div className="ac-current">
         {last ? (
           <>
-            <span className={"ac-cur-num c-" + last.color}>{last.n}</span>
+            <span key={N} className={"ac-cur-num flash c-" + last.color}>{last.n}</span>
             <span className="ac-cur-meta">
               {last.color.toUpperCase()}
               {last.color !== "green" && (
