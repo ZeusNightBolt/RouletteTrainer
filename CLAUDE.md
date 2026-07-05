@@ -53,7 +53,8 @@ src/App.jsx                   state (wheel, bets + undo stack, bankroll, history
 src/wheels.js                 wheel data + quadrant helpers (SOURCE OF TRUTH)
 src/engine.js                 RNG, spin, parseSequence, resolve (incl. inside "i:" bets), betEV,
                               pocketStakes, quadrantStats, colorStats, numberStats, chiSquare,
-                              simulateStrategies, pnlStats
+                              simulateStrategies, pnlStats, recommendBets (Analyze-tab heuristic:
+                              momentum + mean-reversion bet slips; descriptive, makes no edge claim)
 src/components/RouletteMat.jsx VERTICAL felt betting surface: straight/split/street/corner/six-line
                               hotspots (geometry-derived) + dozens (side bars)/columns/evens/basket
 src/components/Wheel.jsx      SVG wheel AS betting surface (pockets = straight-up, ring = sector);
@@ -66,7 +67,12 @@ src/components/ACBoard.jsx    Atlantic City results board: current number, recen
 src/components/ResultsTicker.jsx  recent-numbers marquee (used by the Analyze tab)
 src/components/QuadrantPanel.jsx  4 quadrant cards, color/streak bar, live χ² (strip extracted)
 src/components/SessionAnalytics.jsx  equity curve (realized vs exact-EV), P&L / edge / streak tiles
-src/components/SequenceAnalyzer.jsx  Analyze tab: paste numbers → parseSequence → QuadrantPanel
+src/components/SequenceAnalyzer.jsx  Analyze tab: paste numbers → parseSequence → QuadrantPanel;
+                              at >6 results also unlocks the FrequencyWheel + BetRecommendations
+src/components/FrequencyWheel.jsx  Analyze tab: pasted history mapped back onto the wheel — per-pocket
+                              hit counts + gold heat + quadrant totals (descriptive map of the past)
+src/components/BetRecommendations.jsx  Analyze tab: two sized bet slips from recommendBets (momentum
+                              vs mean-reversion) + prominent "not an edge" disclaimer
 src/components/FallacyLab.jsx 100k-spin cold/fixed/random comparison
 src/styles.css                full theme
 test/verify.js                CI gate
