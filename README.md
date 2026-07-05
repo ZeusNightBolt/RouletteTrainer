@@ -59,8 +59,9 @@ The table is a **dual view** that mimics a real online roulette round:
    | **Even-money** | the leftmost column: 1–18 / 19–36 / red / black / odd / even | 18 | 1:1 | **−2.63 %** with AC half-back |
    | **Basket** | 0-00-1-2-3 corner (american only) | 5 | 6:1 | −7.89 % (worst bet) |
 
-   **Shift-click removes** a bet; **Undo** walks back one edit at a time; **Clear** wipes the felt
-   (and is itself undoable). Bets ride from spin to spin until you change them.
+   **Double-tap a tile** (or **shift-click** on desktop) removes that tile's whole bet; **Undo** walks
+   back one edit at a time; **Clear** wipes the felt (and is itself undoable). Bets ride from spin to
+   spin until you change them.
 
 2. **Hit SPIN.** The view flips to a **realistic animated wheel**. The ball rides the outer track,
    decelerates, and **taps into a pocket** — the result stays hidden until it lands (a playful
