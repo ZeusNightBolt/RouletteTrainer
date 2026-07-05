@@ -45,7 +45,7 @@ npm run preview   # serve dist/
 ```
 index.html                    dark-root shell, fonts
 src/main.jsx                  entry
-src/ui.js                     shared UI constants + formatters (Q_CLASS, CHIPS, fmt/signed/pct)
+src/ui.js                     shared UI constants + formatters (SPIN_MS, Q_CLASS, CHIPS, fmt/signed/pct)
 src/App.jsx                   state (wheel, bets + undo stack, bankroll, history, log)
                               + dual view: felt MAT before spin, WHEEL after; tabbed panel right
 src/wheels.js                 wheel data + quadrant helpers (SOURCE OF TRUTH)
@@ -54,7 +54,8 @@ src/engine.js                 RNG, spin, parseSequence, resolve (incl. inside "i
 src/components/RouletteMat.jsx classic felt AS betting surface: straight/split/street/corner/
                               six-line hotspots (geometry-derived) + dozens/columns/evens/basket
 src/components/Wheel.jsx      SVG wheel AS betting surface (pockets = straight-up, ring = sector);
-                              after spin shows per-pocket split amounts + winning-pocket highlight
+                              ball orbits + drops/taps into the pocket (result hidden until it lands,
+                              gated by App's `spinning`), then shows per-pocket split amounts + highlight
 src/components/BetConsole.jsx chip selector + undo/clear, docked above the mat/wheel
 src/components/ResultsTicker.jsx  recent-numbers marquee (top of table col + Analyze tab)
 src/components/QuadrantPanel.jsx  4 quadrant cards, color/streak bar, live χ² (strip extracted)

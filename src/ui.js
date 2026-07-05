@@ -2,6 +2,12 @@
 // formatting and the quadrant/chip vocabulary in one place so every component
 // renders them identically.
 
+// Spin animation length. Single source of truth: the CSS timings derive from
+// the `--spin-dur` custom property (App sets it from this), and the JS timer
+// that reveals the result after the ball lands uses the same value. Keep the
+// two in lockstep by reading from here.
+export const SPIN_MS = 4200;
+
 // quadrant → CSS class (palette lives in styles.css: --q1..--q4)
 export const Q_CLASS = ["q1", "q2", "q3", "q4"];
 

@@ -9,7 +9,7 @@ import QuadrantPanel from "./components/QuadrantPanel.jsx";
 import FallacyLab from "./components/FallacyLab.jsx";
 import SessionAnalytics from "./components/SessionAnalytics.jsx";
 import SequenceAnalyzer from "./components/SequenceAnalyzer.jsx";
-import { fmt } from "./ui.js";
+import { fmt, SPIN_MS } from "./ui.js";
 
 const TABS = [
   ["telemetry", "Telemetry"],
@@ -31,11 +31,13 @@ export default function App() {
   const [log, setLog] = useState([]);
   const [lastOut, setLastOut] = useState(null);
   const [spinId, setSpinId] = useState(0); // increments per spin to retrigger animations
+  const [spinning, setSpinning] = useState(false); // ball in flight — result hidden until it lands
   const [view, setView] = useState("mat"); // "mat" (place bets) | "wheel" (spin result)
   const [tab, setTab] = useState("telemetry");
 
   const rng = useRef(null);
   if (!rng.current) rng.current = makeCryptoRng();
+  const spinTimer = useRef(null);
 
   const stats = useMemo(() => quadrantStats(wheelKey, history), [wheelKey, history]);
   const cstats = useMemo(() => colorStats(wheelKey, history), [wheelKey, history]);
@@ -55,6 +57,8 @@ export default function App() {
     setRecords([]);
     setLastOut(null);
     setView("mat");
+    setSpinning(false);
+    if (spinTimer.current) clearTimeout(spinTimer.current);
     pushLog(`Wheel switched to ${WHEELS[key].label} — session stats reset.`);
   }
 
@@ -87,6 +91,7 @@ export default function App() {
   }
 
   function doSpin() {
+    if (spinning) return; // ignore clicks while the ball is still in flight
     if (staked > bank) {
       pushLog(`Staked ${fmt(staked)} exceeds bankroll ${fmt(bank)} — clear bets or rebuy.`);
       return;
@@ -100,6 +105,9 @@ export default function App() {
     setLastOut(out);
     setSpinId((s) => s + 1);
     setView("wheel"); // dual view: reveal the wheel + result after the spin
+    setSpinning(true); // hold the result hidden until the ball lands
+    if (spinTimer.current) clearTimeout(spinTimer.current);
+    spinTimer.current = setTimeout(() => setSpinning(false), SPIN_MS);
     setBetStack([]); // undo applies to edits since the last spin
     const qid = WHEELS[wheelKey].quadrants[out.q].id;
     const head = `#${history.length + 1}  ${out.n} ${out.color.toUpperCase()} · ${qid}`;
@@ -111,7 +119,7 @@ export default function App() {
   }
 
   return (
-    <div className="app">
+    <div className="app" style={{ "--spin-dur": `${SPIN_MS}ms` }}>
       <header className="hdr">
         <div className="hdr-brand">
           <span className="hdr-dot" aria-hidden="true" />
@@ -179,21 +187,24 @@ export default function App() {
                   stakes={stakes}
                   onBet={onBet}
                   spinId={spinId}
+                  spinning={spinning}
                 />
               </div>
             )}
 
             <div className="spin-row">
-              <button className="btn spin" onClick={doSpin}>
-                SPIN
+              <button className={"btn spin" + (spinning ? " spinning" : "")} onClick={doSpin} disabled={spinning}>
+                {spinning ? "…" : "SPIN"}
               </button>
-              {view === "wheel" && (
+              {view === "wheel" && !spinning && (
                 <button className="btn" onClick={() => setView("mat")}>
                   ＋ New bets
                 </button>
               )}
               <span className="spin-note">
-                {view === "mat"
+                {spinning
+                  ? "no more bets — the ball is in play…"
+                  : view === "mat"
                   ? staked > 0
                     ? `${fmt(staked)} riding · click a line for a split, a corner for 4, edges for streets · shift-click removes`
                     : "place bets on the felt — numbers, splits, corners, streets, six-lines, outside"
