@@ -1,15 +1,19 @@
 import React, { useMemo, useRef, useState } from "react";
 import { WHEELS } from "./wheels.js";
-import { makeCryptoRng, spin, resolve, quadrantStats, chiSquare, betEV, pnlStats, colorStats, pocketStakes } from "./engine.js";
+import { makeCryptoRng, spin, resolve, quadrantStats, chiSquare, betEV, pnlStats, colorStats, pocketStakes, numberStats } from "./engine.js";
 import Wheel from "./components/Wheel.jsx";
 import RouletteMat from "./components/RouletteMat.jsx";
 import BetConsole from "./components/BetConsole.jsx";
-import ResultsTicker from "./components/ResultsTicker.jsx";
+import StatsBanner from "./components/StatsBanner.jsx";
+import ACBoard from "./components/ACBoard.jsx";
 import QuadrantPanel from "./components/QuadrantPanel.jsx";
 import FallacyLab from "./components/FallacyLab.jsx";
 import SessionAnalytics from "./components/SessionAnalytics.jsx";
 import SequenceAnalyzer from "./components/SequenceAnalyzer.jsx";
 import { fmt, SPIN_MS } from "./ui.js";
+
+// how long the wheel lingers on the result before the felt returns
+const RESULT_HOLD_MS = 1500;
 
 const TABS = [
   ["telemetry", "Telemetry"],
@@ -37,10 +41,15 @@ export default function App() {
 
   const rng = useRef(null);
   if (!rng.current) rng.current = makeCryptoRng();
-  const spinTimer = useRef(null);
+  const timers = useRef([]);
+  const clearTimers = () => {
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+  };
 
   const stats = useMemo(() => quadrantStats(wheelKey, history), [wheelKey, history]);
   const cstats = useMemo(() => colorStats(wheelKey, history), [wheelKey, history]);
+  const nstats = useMemo(() => numberStats(wheelKey, history), [wheelKey, history]);
   const chi2 = useMemo(() => chiSquare(stats), [stats]);
   const staked = useMemo(() => Object.values(bets).reduce((a, b) => a + b, 0), [bets]);
   const pnl = useMemo(() => pnlStats(records), [records]);
@@ -58,7 +67,7 @@ export default function App() {
     setLastOut(null);
     setView("mat");
     setSpinning(false);
-    if (spinTimer.current) clearTimeout(spinTimer.current);
+    clearTimers();
     pushLog(`Wheel switched to ${WHEELS[key].label} — session stats reset.`);
   }
 
@@ -104,10 +113,11 @@ export default function App() {
     setRecords((r) => [...r, { staked: res.staked, returned: res.returned, net: res.net, ev }]);
     setLastOut(out);
     setSpinId((s) => s + 1);
-    setView("wheel"); // dual view: reveal the wheel + result after the spin
-    setSpinning(true); // hold the result hidden until the ball lands
-    if (spinTimer.current) clearTimeout(spinTimer.current);
-    spinTimer.current = setTimeout(() => setSpinning(false), SPIN_MS);
+    setView("wheel"); // flip to the wheel for the spin…
+    setSpinning(true); // …with the result hidden until the ball lands
+    clearTimers();
+    timers.current.push(setTimeout(() => setSpinning(false), SPIN_MS)); // reveal on landing
+    timers.current.push(setTimeout(() => setView("mat"), SPIN_MS + RESULT_HOLD_MS)); // then back to the felt
     setBetStack([]); // undo applies to edits since the last spin
     const qid = WHEELS[wheelKey].quadrants[out.q].id;
     const head = `#${history.length + 1}  ${out.n} ${out.color.toUpperCase()} · ${qid}`;
@@ -153,7 +163,7 @@ export default function App() {
         <section className="col left">
           <div className="card wheel-card">
             <div className="table-head">
-              <ResultsTicker wheelKey={wheelKey} history={history} limit={18} label="recent" />
+              <StatsBanner pnl={pnl} streak={cstats.streak} spins={history.length} />
               <div className="seg view-seg">
                 <button className={"seg-btn" + (view === "mat" ? " on" : "")} onClick={() => setView("mat")}>
                   Table
@@ -215,6 +225,7 @@ export default function App() {
         </section>
 
         <section className="col right">
+          <ACBoard wheelKey={wheelKey} history={history} nstats={nstats} />
           <nav className="tabs" role="tablist">
             {TABS.map(([key, label]) => (
               <button

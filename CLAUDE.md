@@ -34,7 +34,7 @@
 
 ```bash
 npm install
-npm run verify    # 102-assertion gate (~10 s)
+npm run verify    # 115-assertion gate (~10 s)
 npm run dev       # Vite dev server
 npm run build     # production bundle → dist/
 npm run preview   # serve dist/
@@ -47,17 +47,22 @@ index.html                    dark-root shell, fonts
 src/main.jsx                  entry
 src/ui.js                     shared UI constants + formatters (SPIN_MS, Q_CLASS, CHIPS, fmt/signed/pct)
 src/App.jsx                   state (wheel, bets + undo stack, bankroll, history, log)
-                              + dual view: felt MAT before spin, WHEEL after; tabbed panel right
+                              + flow: vertical MAT + banner → SPIN flips to WHEEL → auto-reverts
+                              to felt; AC results board + tabbed panel on the right
 src/wheels.js                 wheel data + quadrant helpers (SOURCE OF TRUTH)
 src/engine.js                 RNG, spin, parseSequence, resolve (incl. inside "i:" bets), betEV,
-                              pocketStakes, quadrantStats, colorStats, chiSquare, simulateStrategies, pnlStats
-src/components/RouletteMat.jsx classic felt AS betting surface: straight/split/street/corner/
-                              six-line hotspots (geometry-derived) + dozens/columns/evens/basket
+                              pocketStakes, quadrantStats, colorStats, numberStats, chiSquare,
+                              simulateStrategies, pnlStats
+src/components/RouletteMat.jsx VERTICAL felt betting surface: straight/split/street/corner/six-line
+                              hotspots (geometry-derived) + dozens (side bars)/columns/evens/basket
 src/components/Wheel.jsx      SVG wheel AS betting surface (pockets = straight-up, ring = sector);
                               ball orbits + drops/taps into the pocket (result hidden until it lands,
                               gated by App's `spinning`), then shows per-pocket split amounts + highlight
 src/components/BetConsole.jsx chip selector + undo/clear, docked above the mat/wheel
-src/components/ResultsTicker.jsx  recent-numbers marquee (top of table col + Analyze tab)
+src/components/StatsBanner.jsx compact session banner (spins / P&L / hit rate / streak) above the mat
+src/components/ACBoard.jsx    Atlantic City results board: current number, recent run, red/black tote,
+                              odd-even/low-high/dozen/column tallies, hot & cold numbers
+src/components/ResultsTicker.jsx  recent-numbers marquee (used by the Analyze tab)
 src/components/QuadrantPanel.jsx  4 quadrant cards, color/streak bar, live χ² (strip extracted)
 src/components/SessionAnalytics.jsx  equity curve (realized vs exact-EV), P&L / edge / streak tiles
 src/components/SequenceAnalyzer.jsx  Analyze tab: paste numbers → parseSequence → QuadrantPanel

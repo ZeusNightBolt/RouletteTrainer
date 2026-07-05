@@ -5,14 +5,18 @@
 A dark-theme React trainer for double-zero (Atlantic City rules) and single-zero roulette, built
 around one question: **do wheel-quadrant droughts carry any tradeable information?**
 
-The app plays like a real online roulette game with a **dual view**: you bet on the classic felt
-**mat** (the full table layout), hit **SPIN**, and the view flips to the **wheel** to show the
-result. Every real inside bet is on the felt — straight, **split**, street, corner, six-line — plus
-dozens, columns, even-money, and the basket. Because a split/corner/etc. is really a chip spread
-across several numbers, the wheel then shows the **per-pocket split amount** (a $10 split shows $5
-on each of its two pockets — computed, not faked) and highlights the winning pocket. A docked
-console handles chips, undo, and clear; a recent-results ticker runs along the top. Everything
-analytical lives in tabs beside the table:
+The app plays like a real online roulette game. You bet on a **vertical felt mat** (the full table
+layout, with a session stats banner above it), hit **SPIN**, the view flips to a **realistic
+animated wheel** — the ball orbits, decelerates, and taps into the pocket, with the result hidden
+until it lands — and then it **flips back to the felt** for your next bets. Every real inside bet is
+on the mat — straight, **split**, street, corner, six-line — plus dozens, columns, even-money, and
+the basket. Because a split/corner/etc. is really a chip spread across several numbers, the wheel
+shows the **per-pocket split amount** (a $10 split shows $5 on each of its two pockets — computed,
+not faked) and highlights the winning pocket.
+
+On the right sits an **Atlantic City results board** — the electronic tote you'd see over a live
+table: the current number, the recent run, red (left) / black (right) counts, odd-even / low-high /
+dozen / column tallies, and hot & cold numbers. Below it, everything analytical lives in tabs:
 
 - **Telemetry** — live per-quadrant **and per-color** stats (drought, hit share, streak, χ² vs. fair).
 - **Analytics** — your realized bankroll plotted against the *exact* expected-value line.
@@ -107,15 +111,16 @@ every Pages deploy — if any payout, wheel datum, or the fallacy null drifts, t
 src/wheels.js      source of truth: pocket sequences, quadrant arcs, French call bets
 src/engine.js      pure engine (no DOM): crypto RNG w/ rejection sampling, bet resolution
                    (incl. inside split/street/corner/six-line), exact bet EV (betEV), per-pocket
-                   stake split (pocketStakes), sequence parser, quadrant/color stats, χ²,
+                   stake split (pocketStakes), sequence parser, quadrant/color/number stats, χ²,
                    strategy simulator, session P&L (pnlStats)
-test/verify.js     CI gate: 102 assertions — exact data invariants, MC edges vs theory (all bet
+test/verify.js     CI gate: 115 assertions — exact data invariants, MC edges vs theory (all bet
                    types), gambler's-fallacy null, closed-form EV, per-pocket-stake conservation,
-                   session-analytics + color + sequence-parser rollups
-src/App.jsx        state + wiring, undo stack, dual-view (mat ⇄ wheel) + tabbed panel
-src/components/    RouletteMat (bettable felt: straight/split/street/corner/six-line + outside),
-                   Wheel (bettable SVG + ball-orbit anim + per-pocket split amounts), BetConsole,
-                   ResultsTicker, QuadrantPanel, SessionAnalytics, SequenceAnalyzer, FallacyLab
+                   session-analytics + color + number-board + sequence-parser rollups
+src/App.jsx        state + wiring, undo stack, mat→wheel→mat flow + AC board + tabbed panel
+src/components/    RouletteMat (vertical bettable felt: straight/split/street/corner/six-line +
+                   outside), Wheel (bettable SVG + ball-drop anim + per-pocket split amounts),
+                   BetConsole, StatsBanner, ACBoard (Atlantic City results tote), ResultsTicker,
+                   QuadrantPanel, SessionAnalytics, SequenceAnalyzer, FallacyLab
 ```
 
 Design constraints: the live table uses `crypto.getRandomValues` with rejection sampling
