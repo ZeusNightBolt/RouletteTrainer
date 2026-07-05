@@ -92,13 +92,11 @@ button:focus-visible {
   align-items: center;
   gap: 9px;
 }
-.hdr-dot {
-  width: 13px;
-  height: 13px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #f4d27a, var(--gold) 60%, #9a7a2c);
-  box-shadow: 0 0 10px rgba(226, 183, 85, 0.55);
+.hdr-logo {
+  display: block;
   flex: 0 0 auto;
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(226, 183, 85, 0.45);
 }
 .hdr-mark {
   font-family: var(--font-display);
