@@ -390,6 +390,112 @@ export function numberStats(wheelKey, history) {
   return { total: N, red, black, green, odd, even, low, high, dozens, columns, perNumber, hot, cold };
 }
 
+// --- Heuristic bet recommender (Analyze tab) ----------------------------------
+//
+// PATTERN-RECOGNITION ONLY — explicitly NOT an edge. Roulette has no memory:
+// P(any pocket) is 1/N on the next spin no matter what a pasted history says, so
+// none of this changes expectation (every slip it emits is still the flat house
+// edge). It reads the history through the two folk theories the user asked for
+// and turns each into a concrete, sized ticket:
+//   • momentum ("hot")     — ride what has been landing: the leading colour /
+//                            parity / half / dozen and the most-hit numbers.
+//   • reversion ("cold")   — back what is overdue: the trailing side and the
+//                            longest-absent numbers.
+// The two slips deliberately DISAGREE — that is the lesson: both are just
+// stories told over noise. Sizes follow the user's normal ticket: even-money /
+// outside at `outsideBase` (bumped to `outsideStrong` on a strong lean), inside
+// at `perNumber` each across 5–10 numbers. Pure and history-blind: it summarises
+// what it is handed and invents nothing about the next spin.
+export function recommendBets(wheelKey, history, opts = {}) {
+  const { outsideBase = 25, outsideStrong = 50, perNumber = 5 } = opts;
+  const wheel = WHEELS[wheelKey];
+  const N = history.length;
+  const ns = numberStats(wheelKey, history);
+  const cs = colorStats(wheelKey, history);
+  const streak = cs.streak; // { color, len } | null
+
+  // even-money lean over the spins that carried that property (zeros excluded)
+  const lean = (aCount, bCount, aId, bId) => {
+    const tot = aCount + bCount;
+    const leader = aCount >= bCount ? aId : bId;
+    const laggard = aCount >= bCount ? bId : aId;
+    const leadCount = Math.max(aCount, bCount);
+    const lagCount = Math.min(aCount, bCount);
+    return {
+      tot,
+      leader,
+      laggard,
+      leadShare: tot ? leadCount / tot : 0,
+      lagShare: tot ? lagCount / tot : 0,
+      dev: tot ? Math.abs(aCount / tot - 0.5) : 0, // distance from 50/50
+    };
+  };
+  const color = lean(ns.red, ns.black, "red", "black");
+  const parity = lean(ns.odd, ns.even, "odd", "even");
+  const half = lean(ns.low, ns.high, "low", "high");
+
+  const argmax = (a) => a.reduce((bi, v, i) => (v > a[bi] ? i : bi), 0);
+  const argmin = (a) => a.reduce((bi, v, i) => (v < a[bi] ? i : bi), 0);
+  const hotDozen = argmax(ns.dozens);
+  const coldDozen = argmin(ns.dozens);
+  const hotCol = argmax(ns.columns);
+  const coldCol = argmin(ns.columns);
+
+  // how many inside numbers to name: grow with sample, clamped to the user's 5–10
+  const k = Math.max(5, Math.min(10, Math.round(N / 4)));
+  const byHits = ns.perNumber.filter((x) => x.hits > 0).sort((a, b) => b.hits - a.hits || a.drought - b.drought);
+  const byDrought = ns.perNumber.slice().sort((a, b) => b.drought - a.drought || a.hits - b.hits);
+  const hotNums = byHits.slice(0, k);
+  const coldNums = byDrought.slice(0, k);
+
+  // even-money conviction → stake. Strong when the split leans hard or a streak
+  // is running (momentum) / has run long without the laggard (reversion).
+  const evenSize = (l, streakMatchesLeader) =>
+    l.dev >= 0.12 || (streakMatchesLeader && streak && streak.len >= 4) ? outsideStrong : outsideBase;
+
+  const HALF_LBL = { low: "1–18", high: "19–36" };
+  const dozLbl = (i) => ["1st 12", "2nd 12", "3rd 12"][i];
+  const colLbl = (i) => `Column ${i + 1}`;
+  const pctOf = (x) => Math.round(100 * x);
+  const hitsWord = (c) => `${c} hit${c === 1 ? "" : "s"}`;
+
+  const sum = (items) => items.reduce((s, it) => s + it.amount, 0);
+
+  // ---- momentum slip: ride the leaders --------------------------------------
+  const momentum = [];
+  momentum.push({
+    cat: "Colour",
+    label: color.leader.toUpperCase(),
+    key: "e:" + color.leader,
+    amount: evenSize(color, streak && streak.color === color.leader),
+    reason: `${pctOf(color.leadShare)}% of coloured spins${streak && streak.color === color.leader ? ` · ${streak.len} in a row now` : ""}`,
+  });
+  momentum.push({ cat: "Even/Odd", label: parity.leader.toUpperCase(), key: "e:" + parity.leader, amount: evenSize(parity, false), reason: `${pctOf(parity.leadShare)}% lean` });
+  momentum.push({ cat: "Low/High", label: HALF_LBL[half.leader], key: "e:" + half.leader, amount: evenSize(half, false), reason: `${pctOf(half.leadShare)}% lean` });
+  momentum.push({ cat: "Dozen", label: dozLbl(hotDozen), key: "d:" + (hotDozen + 1), amount: outsideBase, reason: `${hitsWord(ns.dozens[hotDozen])} — most of the three` });
+  const momNums = hotNums.map((x) => ({ n: x.n, amount: perNumber, meta: `${x.hits}×` }));
+  momentum.push({ cat: "Numbers", label: `${momNums.length} hot`, key: "nums", amount: momNums.length * perNumber, reason: `${perNumber} each on ${momNums.map((m) => m.n).join(", ")}`, numbers: momNums });
+
+  // ---- reversion slip: back the laggards -------------------------------------
+  const reversion = [];
+  reversion.push({ cat: "Colour", label: color.laggard.toUpperCase(), key: "e:" + color.laggard, amount: evenSize(color, false), reason: `only ${pctOf(color.lagShare)}% so far — “due”` });
+  reversion.push({ cat: "Even/Odd", label: parity.laggard.toUpperCase(), key: "e:" + parity.laggard, amount: evenSize(parity, false), reason: `trailing at ${pctOf(parity.lagShare)}%` });
+  reversion.push({ cat: "Low/High", label: HALF_LBL[half.laggard], key: "e:" + half.laggard, amount: evenSize(half, false), reason: `trailing at ${pctOf(half.lagShare)}%` });
+  reversion.push({ cat: "Dozen", label: dozLbl(coldDozen), key: "d:" + (coldDozen + 1), amount: outsideBase, reason: `${hitsWord(ns.dozens[coldDozen])} — fewest of the three` });
+  const revNums = coldNums.map((x) => ({ n: x.n, amount: perNumber, meta: x.drought >= N ? "never" : `${x.drought} dry` }));
+  reversion.push({ cat: "Numbers", label: `${revNums.length} cold`, key: "nums", amount: revNums.length * perNumber, reason: `${perNumber} each on ${revNums.map((m) => m.n).join(", ")}`, numbers: revNums });
+
+  return {
+    n: N,
+    wheelKey,
+    k,
+    streak,
+    signals: { color, parity, half, hotDozen, coldDozen, hotCol, coldCol },
+    momentum: { items: momentum, total: sum(momentum) },
+    reversion: { items: reversion, total: sum(reversion) },
+  };
+}
+
 // Pearson chi-square against the fair-wheel expectation (unequal p_i because
 // the quadrant split is 9/10/9/10 or 10/9/9/9). df = 3.
 // Critical values: 7.815 (alpha 0.05), 11.345 (alpha 0.01).

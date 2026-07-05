@@ -10,7 +10,7 @@
 // ---------------------------------------------------------------------------
 
 import { WHEELS, RED, CALL_BETS_EU, colorOf, quadrantIndexOf } from "../src/wheels.js";
-import { spin, resolve, mulberry32, asIntRand, simulateStrategies, betEV, pnlStats, colorStats, parseSequence, pocketStakes, numberStats } from "../src/engine.js";
+import { spin, resolve, mulberry32, asIntRand, simulateStrategies, betEV, pnlStats, colorStats, parseSequence, pocketStakes, numberStats, recommendBets } from "../src/engine.js";
 
 let failures = 0;
 const ok = (cond, label, detail = "") => {
@@ -303,6 +303,46 @@ console.log("\n[5/5] Session P&L analytics (pnlStats on a hand-built stream)");
   const byId = Object.fromEntries(cs.colors.map((c) => [c.id, c]));
   ok(byId.green.hits === 2 && byId.red.hits === 3 && byId.black.hits === 0, "parseSequence: feeds colorStats (2G / 3R / 0B)", `${byId.green.hits}G/${byId.red.hits}R/${byId.black.hits}B`);
   ok(parseSequence("american", "   ").count === 0, "parseSequence: whitespace-only → empty, no throw");
+}
+
+// Heuristic recommender (Analyze tab) — a descriptive, no-edge pattern reader.
+// These assertions pin the mechanical behaviour (which side is "hot"/"cold",
+// bet sizing, slip totals); they make no claim that the picks win, and cannot,
+// because the recommender never touches the RNG.
+{
+  // 12 spins skewed hard red / odd / low, 1 the hottest number, zeros never hit.
+  const { history } = parseSequence("american", "1 3 5 7 9 1 3 5 1 2 4 1");
+  const r = recommendBets("american", history, { outsideBase: 25, outsideStrong: 50, perNumber: 5 });
+  const m = Object.fromEntries(r.momentum.items.map((i) => [i.cat, i]));
+  const c = Object.fromEntries(r.reversion.items.map((i) => [i.cat, i]));
+
+  ok(r.n === 12, "recommendBets: sees 12 observations", `${r.n}`);
+  ok(m.Colour.label === "RED" && m.Colour.key === "e:red", "recommendBets: momentum rides the leading colour (RED)", m.Colour.label);
+  ok(c.Colour.label === "BLACK" && c.Colour.key === "e:black", "recommendBets: reversion backs the trailing colour (BLACK)", c.Colour.label);
+  ok(m["Even/Odd"].label === "ODD" && c["Even/Odd"].label === "EVEN", "recommendBets: parity hot=ODD / cold=EVEN");
+  ok(m["Low/High"].label === "1–18" && c["Low/High"].label === "19–36", "recommendBets: half hot=1–18 / cold=19–36");
+  ok(m.Dozen.label === "1st 12" && m.Dozen.key === "d:1", "recommendBets: hottest dozen is the 1st (all 12 spins there)", m.Dozen.label);
+  ok(c.Dozen.label !== "1st 12" && c.Dozen.key !== "d:1", "recommendBets: coldest dozen is not the hot one", c.Dozen.label);
+  ok(m.Numbers.numbers[0].n === "1", "recommendBets: hottest number (1, 4 hits) leads the momentum inside list", m.Numbers.numbers[0].n);
+  ok(r.k === 5 && m.Numbers.numbers.length === 5 && c.Numbers.numbers.length === 5, "recommendBets: names 5 inside numbers each (5–10 clamp)", `k=${r.k}`);
+  ok(c.Numbers.numbers.every((x) => x.meta === "never"), "recommendBets: cold inside numbers are all never-hit");
+  ok(new Set(m.Numbers.numbers.map((x) => x.n)).size === 5, "recommendBets: momentum inside numbers are distinct");
+  // sizing: strong lean → $50 even-money, dozen at base $25, inside $5/number
+  ok(m.Colour.amount === 50 && m["Even/Odd"].amount === 50 && m["Low/High"].amount === 50, "recommendBets: strong even-money leans stake $50");
+  ok(m.Dozen.amount === 25, "recommendBets: dozen stakes the outside base $25");
+  ok(m.Numbers.numbers.every((x) => x.amount === 5) && m.Numbers.amount === 25, "recommendBets: inside is $5/number (5 → $25)");
+  ok(r.momentum.total === 200 && r.reversion.total === 200, "recommendBets: slip totals = sum of items", `${r.momentum.total}/${r.reversion.total}`);
+  ok(r.momentum.items.filter((i) => i.key.startsWith("e:")).every((i) => i.amount === 25 || i.amount === 50), "recommendBets: every even-money stake is 25 or 50");
+
+  // a balanced sample (no lean, no long streak) sizes even-money at the base $25
+  const flat = parseSequence("american", "1 2 3 4 1 2 3 4").history;
+  const rf = recommendBets("american", flat);
+  const mf = Object.fromEntries(rf.momentum.items.map((i) => [i.cat, i]));
+  ok(mf.Colour.amount === 25, "recommendBets: a flat 50/50 split stakes the base $25, not $50", `${mf.Colour.amount}`);
+
+  // european (single-zero) path runs without throwing and still totals cleanly
+  const reu = recommendBets("european", parseSequence("european", "5 5 5 17 17 32 0 5").history);
+  ok(reu.momentum.total === reu.momentum.items.reduce((s, i) => s + i.amount, 0), "recommendBets: european slip total is internally consistent");
 }
 
 // --- Result -------------------------------------------------------------------

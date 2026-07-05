@@ -1,8 +1,15 @@
 import React, { useMemo, useState } from "react";
 import { WHEELS } from "../wheels.js";
-import { parseSequence, quadrantStats, colorStats, chiSquare } from "../engine.js";
+import { parseSequence, quadrantStats, colorStats, chiSquare, numberStats, recommendBets } from "../engine.js";
 import QuadrantPanel from "./QuadrantPanel.jsx";
 import ResultsTicker from "./ResultsTicker.jsx";
+import FrequencyWheel from "./FrequencyWheel.jsx";
+import BetRecommendations from "./BetRecommendations.jsx";
+
+// once a pasted history has more than this many observations, the frequency
+// wheel + heuristic bet recommendations unlock (below it there's too little to
+// read a "pattern" into, honestly or otherwise)
+const REC_MIN = 6;
 
 const SAMPLE = "0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5";
 
@@ -21,6 +28,9 @@ export default function SequenceAnalyzer({ defaultWheel = "american" }) {
   const chi2 = useMemo(() => chiSquare(stats), [stats]);
 
   const N = parsed.count;
+  const showRecs = N > REC_MIN;
+  const nstats = useMemo(() => (showRecs ? numberStats(wk, parsed.history) : null), [showRecs, wk, parsed.history]);
+  const rec = useMemo(() => (showRecs ? recommendBets(wk, parsed.history) : null), [showRecs, wk, parsed.history]);
 
   return (
     <div className="analyzer">
@@ -80,7 +90,31 @@ export default function SequenceAnalyzer({ defaultWheel = "american" }) {
           <div className="card">
             <ResultsTicker wheelKey={wk} history={parsed.history} limit={40} label="parsed" />
           </div>
+
+          {showRecs && nstats && (
+            <div className="card freq-card">
+              <div className="card-title">
+                Frequency wheel <em>— where the {N} results landed</em>
+              </div>
+              <div className="freq-wrap">
+                <FrequencyWheel wheelKey={wk} ns={nstats} stats={stats} />
+              </div>
+              <div className="freq-foot">
+                Brighter pockets hit more often; the arc labels total each quadrant. A descriptive map of the past — the wheel
+                is still uniform on the next spin.
+              </div>
+            </div>
+          )}
+
+          {showRecs && rec && <BetRecommendations rec={rec} />}
+
           <QuadrantPanel wheelKey={wk} stats={stats} cstats={cstats} history={parsed.history} chi2={chi2} titleOverride="Quadrant breakdown" />
+
+          {!showRecs && (
+            <div className="card an-note-more">
+              Paste more than {REC_MIN} results to unlock the frequency wheel and the momentum / mean-reversion bet suggestions.
+            </div>
+          )}
         </>
       ) : (
         <div className="card an-empty">Paste a sequence above (or load the sample) to see its quadrant and colour breakdown.</div>
