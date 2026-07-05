@@ -25,7 +25,7 @@ rule changes your expected return.
 | Styling | **Plain CSS** with custom properties (`src/styles.css`) | no Tailwind, no CSS-in-JS; dark felt theme, light/system-agnostic |
 | Fonts | Saira Condensed (display) + IBM Plex Mono (data) | loaded from Google Fonts |
 | Randomness | `crypto.getRandomValues` with **rejection sampling** | exactly zero modulo bias for the live table; a seeded `mulberry32` PRNG is used **only** for reproducible tests |
-| Tests / gate | **Node** script (`test/verify.js`), zero test deps | 115 assertions: data invariants, Monte-Carlo edges, closed-form EV, the gambler's-fallacy null |
+| Tests / gate | **Node** script (`test/verify.js`), zero test deps | 133 assertions: data invariants, Monte-Carlo edges, closed-form EV, the gambler's-fallacy null |
 | CI / hosting | **GitHub Actions → GitHub Pages** (`.github/workflows/deploy.yml`) | runs `verify` → `build` → deploy on every push to `main` |
 | Runtime deps | **React + ReactDOM only** | the entire engine, stats, and charts are dependency-free |
 
@@ -40,7 +40,12 @@ The table is a **dual view** that mimics a real online roulette round:
 
 1. **Place bets on the felt.** The left panel opens on a **vertical Atlantic City mat** with a
    session stats banner above it (spins · P&L · hit rate · streak) and a chip console (chip
-   denominations, **Undo**, **Clear**). Pick a chip and click the felt. Every real bet is clickable:
+   denominations, **Undo**, **Clear**). The felt is laid out like a real AC / Resorts World table
+   rotated to portrait — reading left → right: the **even-money outside bets stacked down the
+   leftmost column** (1–18, EVEN, **RED**, **BLACK**, ODD, 19–36 — RED and BLACK are actual coloured
+   boxes), the **three dozens** in the next column, the **0 / 00 head** on top of the **1–36 grid**,
+   and the **2:1 column bets** across the bottom. Pick a chip and click the felt. Every real bet is
+   clickable:
 
    | Bet | Where you click | Covers | Pays | House edge (00 wheel) |
    | --- | --------------- | ------ | ---- | --------------------- |
@@ -49,8 +54,9 @@ The table is a **dual view** that mimics a real online roulette round:
    | **Street** | the right edge of a row of three | 3 | 11:1 | −5.26 % |
    | **Corner** | the point where four numbers meet | 4 | 8:1 | −5.26 % |
    | **Six-line** | the right edge between two rows | 6 | 5:1 | −5.26 % |
-   | **Dozen / Column** | side bars / bottom cells | 12 | 2:1 | −5.26 % |
-   | **Even-money** | 1–18 / 19–36 / red / black / odd / even | 18 | 1:1 | **−2.63 %** with AC half-back |
+   | **Dozen** | the tall bars in the second-from-left column | 12 | 2:1 | −5.26 % |
+   | **Column** | the three `2:1` cells across the bottom | 12 | 2:1 | −5.26 % |
+   | **Even-money** | the leftmost column: 1–18 / 19–36 / red / black / odd / even | 18 | 1:1 | **−2.63 %** with AC half-back |
    | **Basket** | 0-00-1-2-3 corner (american only) | 5 | 6:1 | −7.89 % (worst bet) |
 
    **Shift-click removes** a bet; **Undo** walks back one edit at a time; **Clear** wipes the felt
@@ -65,7 +71,11 @@ The table is a **dual view** that mimics a real online roulette round:
    across several numbers, the wheel shows the **per-pocket split amount** — a $10 split shows **$5
    on each** of its two pockets, a $100 corner shows **$25 on each** of four (computed from real math,
    `pocketStakes`, not faked). The result holds for **5 seconds**, then the view auto-reverts to the
-   felt for your next bets. A manual **Table / Wheel** toggle and a **New bets** button are there too.
+   felt and **pauses on the outcome, like a live table**: a **dealer puck (dolly)** drops onto the
+   winning number and a **net-this-round bar** shows the landed number/colour/sector and your **net
+   inclusive of every bet** (staked / returned, win- or loss-toned). It holds until the next round —
+   **SPIN repeats the same bets**, or touching the felt starts fresh. A manual **Table / Wheel**
+   toggle and a **New bets** button are there too.
 
 Switch between the **American 00** and **European 0** wheels, and toggle **AC half-back / la partage**
 (even-money bets lose only half on a zero) in the header. Top up the play-money bankroll with
@@ -159,32 +169,39 @@ research doc, not implemented.
 ## Project structure
 
 ```
-index.html                         dark-root shell + fonts (bg set inline to avoid a pre-CSS flash)
+index.html                         dark-root shell + fonts + inline SVG roulette-wheel favicon
 src/main.jsx                       React entry
 src/ui.js                          shared constants/formatters: SPIN_MS, RESULT_HOLD_MS,
-                                   SPIN_WORDS, Q_CLASS, CHIPS, fmt/signed/pct
+                                   SPIN_WORDS / pickSpinWord, Q_CLASS, CHIPS, fmt/signed/pct
 src/wheels.js                      SOURCE OF TRUTH: pocket sequences, quadrant arcs, French call bets,
                                    colorOf / quadrantIndexOf helpers
 src/engine.js                      pure engine (no DOM, Node-importable):
                                      makeCryptoRng / mulberry32 · spin · parseSequence · resolve
                                      (incl. inside "i:" bets) · betEV · pocketStakes · quadrantStats ·
-                                     colorStats · numberStats · chiSquare · simulateStrategies · pnlStats
-src/App.jsx                        state, undo stack, the mat → wheel → mat flow, layout
+                                     colorStats · numberStats · chiSquare · simulateStrategies · pnlStats ·
+                                     recommendBets (Analyze-tab heuristic; descriptive, no edge claim)
+src/App.jsx                        state, undo stack, the mat → wheel → paused-result flow, layout
 src/components/
-  RouletteMat.jsx                  vertical SVG felt; geometry-derived straight/split/street/corner/
-                                   six-line hotspots + dozens/columns/even-money/basket
-  Wheel.jsx                        SVG wheel as a betting surface; orbit + drop/tap ball animation;
-                                   per-pocket split amounts + winning-pocket highlight
+  RouletteMat.jsx                  vertical AC-style SVG felt: even-money outside bets down the leftmost
+                                   column, dozens beside them, 1–36 grid, 2:1 columns on the bottom;
+                                   geometry-derived split/street/corner/six-line hotspots + basket;
+                                   dealer puck (dolly) drops on the winning number after a spin
+  Wheel.jsx                        SVG wheel as a betting surface; orbit + drop/tap ball animation
+                                   (result hidden until the ball seats); per-pocket split amounts + highlight
   BetConsole.jsx                   chip selector + undo/clear
   StatsBanner.jsx                  compact spins / P&L / hit-rate / streak strip
+  ResultBar.jsx                    paused-result bar over the felt: landed number + net-this-round (all bets)
+  RouletteMark.jsx                 mini roulette-wheel logo (header) — same geometry as the SVG favicon
   ACBoard.jsx                      Atlantic City results tote (current, recent, red/black, tallies, hot/cold)
   QuadrantPanel.jsx                quadrant cards + colour/streak bar + live χ²  (Telemetry tab)
   SessionAnalytics.jsx             realized-vs-expected equity curve + P&L tiles  (Analytics tab)
-  SequenceAnalyzer.jsx             paste-a-sequence analyzer                       (Analyze tab)
+  SequenceAnalyzer.jsx             paste-a-sequence analyzer; >6 results unlock the below  (Analyze tab)
+  FrequencyWheel.jsx               pasted history mapped onto the wheel: per-pocket heat + quadrant totals
+  BetRecommendations.jsx           momentum + mean-reversion bet slips from recommendBets (+ "not an edge")
   FallacyLab.jsx                   100k-spin cold/fixed/random comparison          (Fallacy Lab tab)
   ResultsTicker.jsx               recent-numbers marquee (used by the analyzer)
 src/styles.css                     full dark-felt theme + responsive/viewport-fit layout + animations
-test/verify.js                     the 115-assertion CI gate
+test/verify.js                     the 133-assertion CI gate
 docs/RESEARCH.md                   literature + detection-cost math, all citations
 .github/workflows/deploy.yml       verify → build → GitHub Pages
 ```
@@ -198,7 +215,7 @@ Node test gate — the exact same code that pays the table is the code that CI v
 
 ```bash
 npm install
-npm run verify    # 115-assertion gate (~10 s) — run before every commit
+npm run verify    # 133-assertion gate (~10 s) — run before every commit
 npm run dev       # Vite dev server (HMR)
 npm run build     # production bundle → dist/
 npm run preview   # serve the built dist/ locally
@@ -217,7 +234,7 @@ Pushes to `main` trigger `.github/workflows/deploy.yml`, which runs `npm ci` →
 `/RouletteTrainer/` project subpath. To host your own fork: enable **Settings → Pages → Source:
 GitHub Actions**.
 
-## What `verify` checks (115 assertions)
+## What `verify` checks (133 assertions)
 
 - **Exact structural invariants** of both wheels (38 / 37 pockets, no dupes; the real geometric
   property that every odd *n* sits opposite *n+1* and 0 opposite 00; 18 red per wheel; quadrant and

@@ -2,10 +2,15 @@ import React from "react";
 import { WHEELS, RED } from "../wheels.js";
 
 // Vertical felt (portrait, like a live table viewed head-on and most mobile
-// roulette apps) as an SVG betting surface. 0/00 on top, then 12 rows × 3 cols
-// of 1–36, dozens as tall bars down the left, the three 2:1 column bets across
-// the bottom, and even-money below. Every real inside bet is a geometry-derived
-// clickable hotspot:
+// roulette apps) as an SVG betting surface. Laid out to mirror a real Atlantic
+// City / Resorts World felt rotated to portrait, reading left → right:
+//   • even-money outside bets (1–18, EVEN, RED, BLACK, ODD, 19–36) — the
+//     LEFTMOST column, six stacked bars (their felt order, low → high)
+//   • the three dozens (1st/2nd/3rd 12) — the next column of tall bars
+//   • the 0 / 00 head at top, then 12 rows × 3 cols of 1–36
+//   • the three 2:1 column bets across the bottom (aligned to the columns)
+//   • a right strip carrying the street / six-line hotspots
+// Every real inside bet is a geometry-derived clickable hotspot:
 //   • straight (35:1) — a number cell
 //   • split    (17:1) — the line shared by two adjacent numbers
 //   • street   (11:1) — the right edge of a row of three
@@ -15,23 +20,23 @@ import { WHEELS, RED } from "../wheels.js";
 // "i:<sorted-hyphen-numbers>"; the engine derives payout (36/count) and the
 // per-pocket split from that. Shift-click removes.
 
-// Kept deliberately short in the vertical axis: a 12-row portrait felt is
-// intrinsically tall, so trimming the row heights (plus the mobile height-fit
-// in styles.css) is what lets the whole mat sit inside one phone screen.
-const CW = 66; // number cell width (wide → readable numerals)
-const CH = 35; // number cell height (compact rows)
-const ZH = 40; // 0/00 row height (top)
-const DGW = 42; // dozen gutter (left)
-const RS = 20; // right strip (street / six-line hotspots)
-const COLH = 35; // 2:1 column-bet row (bottom of grid)
-const EH = 35; // even-money cell height
+// Portrait felt: 12 rows tall, so heights stay trim enough that the whole mat
+// still fits one phone screen (the SVG is height-driven inside its card). Cell
+// sizes here run ~10% larger than the first compact pass, for readier tiles.
+const CW = 73; // number cell width (wide → readable numerals)
+const CH = 39; // number cell height
+const ZH = 44; // 0/00 row height (top)
+const OW = 48; // even-money outside gutter (LEFTMOST column)
+const DGW = 46; // dozen gutter (between the outside bets and the numbers)
+const RS = 22; // right strip (street / six-line hotspots)
+const COLH = 39; // 2:1 column-bet row (bottom of grid)
 
-const GX = DGW;
+const GX = OW + DGW; // number grid starts after the outside + dozen gutters
 const GY = ZH;
 const GRID_W = 3 * CW;
 const GRID_BOTTOM = GY + 12 * CH;
-const W = DGW + GRID_W + RS;
-const H = ZH + 12 * CH + COLH + 2 * EH;
+const W = OW + DGW + GRID_W + RS;
+const H = ZH + 12 * CH + COLH;
 
 const colorOf = (n) => (RED.has(n) ? "red" : "black");
 // vertical grid: row r (0..11 top→bottom), col c (0..2) → number 3r + c + 1
@@ -141,11 +146,37 @@ export default function RouletteMat({ wheelKey, bets, onBet, winner = null }) {
         <MatCell key="0" x={GX} y={0} w={GRID_W} h={ZH} cls="green" label="0" onClick={(e) => onBet("s:0", e)} amount={bets["s:0"]} />
       )}
 
-      {/* dozens — tall bars down the left gutter, each spanning four rows */}
+      {/* even-money outside bets — the LEFTMOST column, six stacked bars beside
+          the dozens, exactly like an AC / Resorts World felt (order runs the
+          felt's low → high sequence; each bar spans two number rows). RED and
+          BLACK boxes are actually coloured, as on a real layout. */}
+      {[
+        ["e:low", "1–18", ""],
+        ["e:even", "EVEN", ""],
+        ["e:red", "RED", "evred"],
+        ["e:black", "BLACK", "evblack"],
+        ["e:odd", "ODD", ""],
+        ["e:high", "19–36", ""],
+      ].map(([key, label, tint], i) => (
+        <MatCell
+          key={key}
+          x={0}
+          y={GY + i * 2 * CH}
+          w={OW}
+          h={2 * CH}
+          cls={"outside " + tint}
+          label={label}
+          rotate
+          onClick={(e) => onBet(key, e)}
+          amount={bets[key]}
+        />
+      ))}
+
+      {/* dozens — tall bars in the next gutter, each spanning four rows */}
       {[1, 2, 3].map((d) => (
         <MatCell
           key={"d" + d}
-          x={0}
+          x={OW}
           y={GY + (d - 1) * 4 * CH}
           w={DGW}
           h={4 * CH}
@@ -195,28 +226,6 @@ export default function RouletteMat({ wheelKey, bets, onBet, winner = null }) {
           />
         );
       })}
-
-      {/* even-money — two rows of three below the columns */}
-      {[
-        ["e:low", "1–18"],
-        ["e:even", "EVEN"],
-        ["e:red", "RED"],
-        ["e:black", "BLACK"],
-        ["e:odd", "ODD"],
-        ["e:high", "19–36"],
-      ].map(([key, label], i) => (
-        <MatCell
-          key={key}
-          x={GX + (i % 3) * CW}
-          y={GRID_BOTTOM + COLH + Math.floor(i / 3) * EH}
-          w={CW}
-          h={EH}
-          cls={"outside " + (key === "e:red" ? "red-ink" : key === "e:black" ? "black-ink" : "")}
-          label={label}
-          onClick={(e) => onBet(key, e)}
-          amount={bets[key]}
-        />
-      ))}
 
       {/* american basket 0-00-1-2-3 — the boundary between the zeros and row 1 */}
       {american && (
