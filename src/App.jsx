@@ -43,6 +43,7 @@ export default function App() {
   const rng = useRef(null);
   if (!rng.current) rng.current = makeCryptoRng();
   const cardRef = useRef(null);
+  const lastTap = useRef({ key: null, t: 0 }); // double-tap-to-clear detection on the felt
   const timers = useRef([]);
   const clearTimers = () => {
     timers.current.forEach(clearTimeout);
@@ -82,14 +83,41 @@ export default function App() {
     setResult(null);
   }
 
+  // remove one tile's whole bet (any key: number, split, dozen, colour, …)
+  function clearBet(key) {
+    if (!bets[key]) return;
+    const c = { ...bets };
+    delete c[key];
+    applyBets(c);
+  }
+
+  const DBL_TAP_MS = 300; // second tap on the same tile within this window = clear it
+
   function onBet(key, e) {
+    // shift-click still clears the tile (desktop power users)
     if (e && e.shiftKey) {
-      if (!bets[key]) return;
-      const c = { ...bets };
-      delete c[key];
-      applyBets(c);
+      clearBet(key);
+      lastTap.current = { key: null, t: 0 };
       return;
     }
+    // double-tap / double-click the SAME tile → remove its whole bet. Works with
+    // touch (no shift key on phones); the transient chip from the first tap is
+    // swept together with the rest.
+    const now = Date.now();
+    const lt = lastTap.current;
+    if (lt.key === key && now - lt.t < DBL_TAP_MS) {
+      lastTap.current = { key: null, t: 0 };
+      setBetStack((s) => [...s.slice(-49), bets]);
+      setBets((b) => {
+        if (!b[key]) return b;
+        const c = { ...b };
+        delete c[key];
+        return c;
+      });
+      setResult(null);
+      return;
+    }
+    lastTap.current = { key, t: now };
     applyBets({ ...bets, [key]: (bets[key] || 0) + chip });
   }
 
@@ -257,7 +285,7 @@ export default function App() {
                 ? result
                   ? `puck marks ${result.n} — SPIN to repeat the same bets, or touch the felt to start a new round`
                   : staked > 0
-                  ? `${fmt(staked)} riding · line = split · corner = 4 · right edge = street · shift-click removes`
+                  ? `${fmt(staked)} riding · line = split · corner = 4 · right edge = street · double-tap a tile to clear it`
                   : "place bets on the felt — numbers, splits, corners, streets, six-lines, outside"
                 : `result ${lastOut ? lastOut.n : ""} · chips show the split amount landing on each pocket`}
             </div>

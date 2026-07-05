@@ -34,7 +34,7 @@
 
 ```bash
 npm install
-npm run verify    # 133-assertion gate (~10 s)
+npm run verify    # 137-assertion gate (~10 s)
 npm run dev       # Vite dev server
 npm run build     # production bundle → dist/
 npm run preview   # serve dist/
@@ -55,7 +55,8 @@ src/wheels.js                 wheel data + quadrant helpers (SOURCE OF TRUTH)
 src/engine.js                 RNG, spin, parseSequence, resolve (incl. inside "i:" bets), betEV,
                               pocketStakes, quadrantStats, colorStats, numberStats, chiSquare,
                               simulateStrategies, pnlStats, recommendBets (Analyze-tab heuristic:
-                              momentum + mean-reversion bet slips; descriptive, makes no edge claim)
+                              momentum + mean-reversion bet slips incl. hot/cold quadrant sector picks
+                              + cold-arc edge numbers; descriptive, makes no edge claim)
 src/components/RouletteMat.jsx VERTICAL AC-felt betting surface: even-money outside bets down the
                               LEFTMOST column (1-18/EVEN/RED/BLACK/ODD/19-36, RED+BLACK coloured),
                               dozens beside them, 1-36 grid, 2:1 columns on the bottom; geometry-derived

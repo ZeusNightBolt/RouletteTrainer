@@ -551,10 +551,13 @@ button:focus-visible {
   width: 100%;
   max-width: 380px;
   height: auto;
+  touch-action: manipulation; /* double-tap clears a tile, not zoom (mobile) */
 }
 .mat-cell,
 .mat-spot {
   cursor: pointer;
+  /* let a double-tap clear the tile instead of triggering Safari's zoom */
+  touch-action: manipulation;
 }
 .mat-rect {
   stroke: #0b1310;

@@ -93,8 +93,10 @@ export default function BetRecommendations({ rec }) {
       </div>
 
       <div className="rec-foot">
-        Sizing follows your usual ticket — ${25}–{50} on colour/outside, $5 per number across {rec.k} inside picks.
-        Momentum names the most-hit numbers; reversion names the longest-absent. Both are guesses.
+        Each slip leads with a <b>quadrant (sector)</b> play — momentum on the arc the ball keeps landing in,
+        reversion on the arc that's gone coldest (with its inside picks pulled from that arc <em>and the numbers
+        straddling its two borders</em>). Sizing follows your usual ticket — ${25}–{50} on colour/outside, $5 per
+        number across {rec.k} inside picks, $5 on each pocket of a sector. Both slips are guesses over noise.
       </div>
     </div>
   );

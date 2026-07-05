@@ -446,7 +446,37 @@ export function recommendBets(wheelKey, history, opts = {}) {
   const byHits = ns.perNumber.filter((x) => x.hits > 0).sort((a, b) => b.hits - a.hits || a.drought - b.drought);
   const byDrought = ns.perNumber.slice().sort((a, b) => b.drought - a.drought || a.hits - b.hits);
   const hotNums = byHits.slice(0, k);
-  const coldNums = byDrought.slice(0, k);
+
+  // --- quadrant lens (the app's core signal) --------------------------------
+  // Hot = the arc the ball keeps landing in/around; cold = the arc overdue the
+  // longest. The cold "zone" also pulls in the pockets straddling its two borders
+  // with the neighbouring arcs — the "edge numbers" where a cold arc meets its
+  // neighbours — since a cold arc's revival tends to happen at its edges. Still
+  // descriptive: P(each pocket) is 1/N on the next spin regardless of any of this.
+  const qstats = quadrantStats(wheelKey, history);
+  let hotQ = 0;
+  let coldQ = 0;
+  for (let i = 1; i < qstats.length; i++) {
+    const q = qstats[i];
+    if (q.hits > qstats[hotQ].hits || (q.hits === qstats[hotQ].hits && q.drought < qstats[hotQ].drought)) hotQ = i;
+    if (q.drought > qstats[coldQ].drought || (q.drought === qstats[coldQ].drought && q.hits < qstats[coldQ].hits)) coldQ = i;
+  }
+  const sectorAmt = (qi) => perNumber * qstats[qi].m; // $perNumber on each pocket of the arc
+  const qLabel = (qi) => wheel.quadrants[qi].id;
+  // the cold arc + the two pockets straddling its borders = the reversion "zone"
+  const NP = wheel.seq.length;
+  const at = (i) => wheel.seq[((i % NP) + NP) % NP];
+  const cq = wheel.quadrants[coldQ];
+  const zone = new Set(wheel.seq.slice(cq.start, cq.end + 1)); // the cold arc …
+  [at(cq.start - 1), at(cq.end + 1)].forEach((p) => zone.add(p)); // … + its two border neighbours
+  const zoneCold = ns.perNumber.filter((x) => zone.has(x.n)).sort((a, b) => b.drought - a.drought || a.hits - b.hits);
+  const revPick = zoneCold.slice();
+  for (const x of byDrought) {
+    // top up from the globally coldest if the arc somehow has < k pockets
+    if (revPick.length >= k) break;
+    if (!revPick.includes(x)) revPick.push(x);
+  }
+  const coldZoneNums = revPick.slice(0, k);
 
   // even-money conviction → stake. Strong when the split leans hard or a streak
   // is running (momentum) / has run long without the laggard (reversion).
@@ -475,6 +505,14 @@ export function recommendBets(wheelKey, history, opts = {}) {
   momentum.push({ cat: "Dozen", label: dozLbl(hotDozen), key: "d:" + (hotDozen + 1), amount: outsideBase, reason: `${hitsWord(ns.dozens[hotDozen])} — most of the three` });
   const momNums = hotNums.map((x) => ({ n: x.n, amount: perNumber, meta: `${x.hits}×` }));
   momentum.push({ cat: "Numbers", label: `${momNums.length} hot`, key: "nums", amount: momNums.length * perNumber, reason: `${perNumber} each on ${momNums.map((m) => m.n).join(", ")}`, numbers: momNums });
+  // lead with the hot arc — the quadrant it keeps landing in/around
+  momentum.unshift({
+    cat: "Sector",
+    label: `${qLabel(hotQ)} arc`,
+    key: "q:" + hotQ,
+    amount: sectorAmt(hotQ),
+    reason: `${hitsWord(qstats[hotQ].hits)} (${pctOf(qstats[hotQ].share)}%) — hottest arc · $${perNumber}×${qstats[hotQ].m} pockets`,
+  });
 
   // ---- reversion slip: back the laggards -------------------------------------
   const reversion = [];
@@ -482,15 +520,23 @@ export function recommendBets(wheelKey, history, opts = {}) {
   reversion.push({ cat: "Even/Odd", label: parity.laggard.toUpperCase(), key: "e:" + parity.laggard, amount: evenSize(parity, false), reason: `trailing at ${pctOf(parity.lagShare)}%` });
   reversion.push({ cat: "Low/High", label: HALF_LBL[half.laggard], key: "e:" + half.laggard, amount: evenSize(half, false), reason: `trailing at ${pctOf(half.lagShare)}%` });
   reversion.push({ cat: "Dozen", label: dozLbl(coldDozen), key: "d:" + (coldDozen + 1), amount: outsideBase, reason: `${hitsWord(ns.dozens[coldDozen])} — fewest of the three` });
-  const revNums = coldNums.map((x) => ({ n: x.n, amount: perNumber, meta: x.drought >= N ? "never" : `${x.drought} dry` }));
-  reversion.push({ cat: "Numbers", label: `${revNums.length} cold`, key: "nums", amount: revNums.length * perNumber, reason: `${perNumber} each on ${revNums.map((m) => m.n).join(", ")}`, numbers: revNums });
+  const revNums = coldZoneNums.map((x) => ({ n: x.n, amount: perNumber, meta: x.drought >= N ? "never" : `${x.drought} dry` }));
+  reversion.push({ cat: "Numbers", label: `${revNums.length} cold`, key: "nums", amount: revNums.length * perNumber, reason: `${perNumber} each — cold ${qLabel(coldQ)} pockets + its edges`, numbers: revNums });
+  // lead with the overdue arc — the quadrant that hasn't landed the longest
+  reversion.unshift({
+    cat: "Sector",
+    label: `${qLabel(coldQ)} arc`,
+    key: "q:" + coldQ,
+    amount: sectorAmt(coldQ),
+    reason: `${qstats[coldQ].drought} spins dry — the overdue arc · $${perNumber}×${qstats[coldQ].m} pockets`,
+  });
 
   return {
     n: N,
     wheelKey,
     k,
     streak,
-    signals: { color, parity, half, hotDozen, coldDozen, hotCol, coldCol },
+    signals: { color, parity, half, hotDozen, coldDozen, hotCol, coldCol, hotQ, coldQ },
     momentum: { items: momentum, total: sum(momentum) },
     reversion: { items: reversion, total: sum(reversion) },
   };
