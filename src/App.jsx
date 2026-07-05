@@ -11,6 +11,7 @@ import FallacyLab from "./components/FallacyLab.jsx";
 import SessionAnalytics from "./components/SessionAnalytics.jsx";
 import SequenceAnalyzer from "./components/SequenceAnalyzer.jsx";
 import ResultBar from "./components/ResultBar.jsx";
+import RouletteMark from "./components/RouletteMark.jsx";
 import { fmt, SPIN_MS, RESULT_HOLD_MS, pickSpinWord } from "./ui.js";
 
 const TABS = [
@@ -157,7 +158,7 @@ export default function App() {
     <div className="app" style={{ "--spin-dur": `${SPIN_MS}ms` }}>
       <header className="hdr">
         <div className="hdr-brand">
-          <span className="hdr-dot" aria-hidden="true" />
+          <RouletteMark size={24} className="hdr-logo" />
           <span className="hdr-mark">Roulette Trainer</span>
         </div>
         <div className="hdr-controls">

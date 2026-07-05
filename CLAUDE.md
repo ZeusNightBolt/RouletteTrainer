@@ -43,7 +43,7 @@ npm run preview   # serve dist/
 ## File map
 
 ```
-index.html                    dark-root shell, fonts
+index.html                    dark-root shell, fonts, inline SVG roulette-wheel favicon (data-URI)
 src/main.jsx                  entry
 src/ui.js                     shared UI constants + formatters (SPIN_MS, RESULT_HOLD_MS, SPIN_WORDS,
                               Q_CLASS, CHIPS, fmt/signed/pct)
@@ -66,6 +66,8 @@ src/components/BetConsole.jsx chip selector + undo/clear, docked above the mat/w
 src/components/StatsBanner.jsx compact session banner (spins / P&L / hit rate / streak) above the mat
 src/components/ResultBar.jsx  paused-result bar over the felt: landed number/colour/sector + net this
                               round (all bets); holds until the next round begins
+src/components/RouletteMark.jsx  mini roulette-wheel logo (red/black wedges + green hub + ball) used in
+                              the header; same geometry mirrored as the index.html SVG favicon
 src/components/ACBoard.jsx    Atlantic City results board: current number, recent run, red/black tote,
                               odd-even/low-high/dozen/column tallies, hot & cold numbers
 src/components/ResultsTicker.jsx  recent-numbers marquee (used by the Analyze tab)
