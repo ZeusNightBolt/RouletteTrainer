@@ -386,10 +386,11 @@ button:focus-visible {
 }
 
 /* ORBIT — the ball circles the wheel and decelerates to a long, natural stop.
-   Many revolutions over a long spin: fast at first, still creeping toward the
-   pocket as it drops. ~16 turns. */
+   Many revolutions over a long spin: quick at first, still creeping toward the
+   pocket as it drops. ~12.8 turns — the initial circling speed is ~20% gentler
+   than a full-throttle spin so it reads as a real ball settling, not a blur. */
 @keyframes ballOrbit {
-  from { transform: rotate(calc(var(--land) - 5760deg)); }
+  from { transform: rotate(calc(var(--land) - 4608deg)); }
   to { transform: rotate(var(--land)); }
 }
 .ball-orbit {
@@ -435,20 +436,22 @@ button:focus-visible {
   animation: hubSpinPulse 1.1s ease-in-out infinite;
 }
 
-/* winning pocket lights up AS the ball drops into the hole (≈ when the drop
-   phase begins), then pulses down to a steady glow */
+/* winning-pocket ring — the element only mounts once the ball has seated
+   (spinning → false in App, same instant the number is revealed), so it plays
+   from mount with NO delay: a bright flash the moment the ball lands, settling
+   to a steady glow. It can never light up while the ball is still circling. */
 @keyframes pocketFlash {
-  0% { opacity: 0; }
-  12% { opacity: 1; }
-  45% { opacity: 0.4; }
-  70% { opacity: 1; }
+  0% { opacity: 0; transform: scale(1.015); }
+  18% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; }
+  75% { opacity: 1; }
   100% { opacity: 0.9; }
 }
 .pocket-highlight {
   filter: drop-shadow(0 0 6px var(--gold));
-  /* lights up only in the final stretch, as the ball drops off the track into
-     the pocket — not while it's still circling */
-  animation: pocketFlash calc(var(--spin-dur) * 0.26) calc(var(--spin-dur) * 0.74) ease-out both;
+  transform-box: view-box;
+  transform-origin: center;
+  animation: pocketFlash 0.9s ease-out both;
 }
 @keyframes tickPop {
   from { opacity: 0; transform: translateY(-6px) scale(0.82); }
@@ -1784,10 +1787,83 @@ button:focus-visible {
   .grid {
     grid-template-columns: 1fr;
   }
+  /* Mobile / tablet: the play surface (banner + chips + SPIN + felt or wheel)
+     owns the first screenful so the whole mat fits an iPhone Pro Max Safari
+     window without scrolling. The felt/wheel is height-driven inside the card
+     — exactly like desktop — instead of width-driven-and-endlessly-tall. The
+     board + analytics flow below and are reached by scrolling down. svh (small
+     viewport height) keeps it correct while Safari's toolbars are showing;
+     the vh line is the fallback for older engines. */
+  .wheel-card {
+    display: flex;
+    flex-direction: column;
+    /* fill the screen below the (compacted) header so the whole felt fits one
+       phone screen; svh tracks Safari's small viewport with toolbars shown */
+    height: calc(100vh - 112px);
+    height: calc(100svh - 112px);
+    min-height: 440px;
+    max-height: 900px;
+  }
+  .view-area {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+  .mat-wrap,
+  .wheel-wrap {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin: 6px 0;
+  }
+  .mat,
+  .wheel {
+    width: auto;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+  }
 }
 @media (max-width: 640px) {
   .app {
     padding: 0 12px 22px;
+  }
+  /* Compact header so it never eats more than ~2 short rows — the felt below
+     depends on a predictable header height (the wheel-card fills 100svh minus
+     it). Dropping the toggle's explainer text is the biggest single saving. */
+  .hdr {
+    padding: 6px 2px;
+    margin-bottom: 8px;
+    gap: 5px 12px;
+  }
+  .hdr-mark {
+    font-size: 14px;
+    letter-spacing: 1.1px;
+  }
+  .hdr-controls {
+    gap: 8px 12px;
+  }
+  .hdr-controls .seg-btn {
+    padding: 4px 11px;
+    font-size: 12.5px;
+  }
+  .toggle {
+    font-size: 10.5px;
+    gap: 6px;
+  }
+  .toggle em {
+    display: none; /* drop the long "(even-money on zeros → …)" explainer */
+  }
+  .bank {
+    gap: 7px;
+  }
+  .bank-label {
+    display: none;
+  }
+  .bank-val {
+    font-size: 20px;
+  }
+  .bank .btn.ghost {
+    padding: 4px 9px;
+    font-size: 10.5px;
   }
   .qcards,
   .lab-grid,

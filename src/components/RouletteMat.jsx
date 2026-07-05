@@ -15,13 +15,16 @@ import { WHEELS, RED } from "../wheels.js";
 // "i:<sorted-hyphen-numbers>"; the engine derives payout (36/count) and the
 // per-pocket split from that. Shift-click removes.
 
-const CW = 66; // number cell width
-const CH = 46; // number cell height
-const ZH = 50; // 0/00 row height (top)
+// Kept deliberately short in the vertical axis: a 12-row portrait felt is
+// intrinsically tall, so trimming the row heights (plus the mobile height-fit
+// in styles.css) is what lets the whole mat sit inside one phone screen.
+const CW = 66; // number cell width (wide → readable numerals)
+const CH = 35; // number cell height (compact rows)
+const ZH = 40; // 0/00 row height (top)
 const DGW = 42; // dozen gutter (left)
 const RS = 20; // right strip (street / six-line hotspots)
-const COLH = 42; // 2:1 column-bet row (bottom of grid)
-const EH = 42; // even-money cell height
+const COLH = 35; // 2:1 column-bet row (bottom of grid)
+const EH = 35; // even-money cell height
 
 const GX = DGW;
 const GY = ZH;

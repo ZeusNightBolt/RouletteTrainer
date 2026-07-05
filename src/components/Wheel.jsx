@@ -181,9 +181,10 @@ export default function Wheel({ wheelKey, lastIdx, stats, bets = {}, stakes = {}
         </g>
       )}
 
-      {/* winning-pocket highlight — lights up as the ball drops into the hole
-          (CSS delay ≈ 82% of the spin), then pulses. */}
-      {lastIdx != null && (
+      {/* winning-pocket highlight — mounts only once the ball has seated
+          (spinning → false), so it flashes exactly when the result is revealed,
+          never before the ball lands. */}
+      {lastIdx != null && !spinning && (
         <path
           key={"hl" + spinId}
           className="pocket-highlight"
