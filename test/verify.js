@@ -331,8 +331,18 @@ console.log("\n[5/5] Session P&L analytics (pnlStats on a hand-built stream)");
   ok(m.Colour.amount === 50 && m["Even/Odd"].amount === 50 && m["Low/High"].amount === 50, "recommendBets: strong even-money leans stake $50");
   ok(m.Dozen.amount === 25, "recommendBets: dozen stakes the outside base $25");
   ok(m.Numbers.numbers.every((x) => x.amount === 5) && m.Numbers.amount === 25, "recommendBets: inside is $5/number (5 → $25)");
-  ok(r.momentum.total === 200 && r.reversion.total === 200, "recommendBets: slip totals = sum of items", `${r.momentum.total}/${r.reversion.total}`);
   ok(r.momentum.items.filter((i) => i.key.startsWith("e:")).every((i) => i.amount === 25 || i.amount === 50), "recommendBets: every even-money stake is 25 or 50");
+
+  // quadrant lens: hot arc = the most-hit quadrant (Q2, 8 hits here); cold arc =
+  // the longest-dry quadrant (Q3, never hit). Sector bet = $5 on each arc pocket.
+  ok(r.signals.hotQ === 1 && r.signals.coldQ === 2, "recommendBets: hot arc = Q2 (most hits), cold arc = Q3 (longest dry)", `hot ${r.signals.hotQ} / cold ${r.signals.coldQ}`);
+  ok(m.Sector.key === "q:1" && m.Sector.label === "Q2 arc", "recommendBets: momentum leads with the hot Q2 sector", m.Sector.label);
+  ok(c.Sector.key === "q:2" && c.Sector.label === "Q3 arc", "recommendBets: reversion leads with the overdue Q3 sector", c.Sector.label);
+  ok(m.Sector.amount === 50 && c.Sector.amount === 45, "recommendBets: sector stakes $5 × arc pockets (Q2=10→$50, Q3=9→$45)", `${m.Sector.amount}/${c.Sector.amount}`);
+  // reversion inside numbers are drawn from the cold arc + its two border pockets
+  const coldZone = new Set(["00", "27", "10", "25", "29", "12", "8", "19", "31", "1", "18"]);
+  ok(c.Numbers.numbers.every((x) => coldZone.has(x.n)), "recommendBets: reversion numbers sit in the cold Q3 arc + its edges", c.Numbers.numbers.map((x) => x.n).join(","));
+  ok(r.momentum.total === 250 && r.reversion.total === 245, "recommendBets: slip totals = sum of items incl. the sector", `${r.momentum.total}/${r.reversion.total}`);
 
   // a balanced sample (no lean, no long streak) sizes even-money at the base $25
   const flat = parseSequence("american", "1 2 3 4 1 2 3 4").history;

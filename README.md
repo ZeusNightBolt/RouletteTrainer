@@ -25,7 +25,7 @@ rule changes your expected return.
 | Styling | **Plain CSS** with custom properties (`src/styles.css`) | no Tailwind, no CSS-in-JS; dark felt theme, light/system-agnostic |
 | Fonts | Saira Condensed (display) + IBM Plex Mono (data) | loaded from Google Fonts |
 | Randomness | `crypto.getRandomValues` with **rejection sampling** | exactly zero modulo bias for the live table; a seeded `mulberry32` PRNG is used **only** for reproducible tests |
-| Tests / gate | **Node** script (`test/verify.js`), zero test deps | 133 assertions: data invariants, Monte-Carlo edges, closed-form EV, the gambler's-fallacy null |
+| Tests / gate | **Node** script (`test/verify.js`), zero test deps | 137 assertions: data invariants, Monte-Carlo edges, closed-form EV, the gambler's-fallacy null |
 | CI / hosting | **GitHub Actions → GitHub Pages** (`.github/workflows/deploy.yml`) | runs `verify` → `build` → deploy on every push to `main` |
 | Runtime deps | **React + ReactDOM only** | the entire engine, stats, and charts are dependency-free |
 
@@ -202,7 +202,7 @@ src/components/
   FallacyLab.jsx                   100k-spin cold/fixed/random comparison          (Fallacy Lab tab)
   ResultsTicker.jsx               recent-numbers marquee (used by the analyzer)
 src/styles.css                     full dark-felt theme + responsive/viewport-fit layout + animations
-test/verify.js                     the 133-assertion CI gate
+test/verify.js                     the 137-assertion CI gate
 docs/RESEARCH.md                   literature + detection-cost math, all citations
 .github/workflows/deploy.yml       verify → build → GitHub Pages
 ```
@@ -216,7 +216,7 @@ Node test gate — the exact same code that pays the table is the code that CI v
 
 ```bash
 npm install
-npm run verify    # 133-assertion gate (~10 s) — run before every commit
+npm run verify    # 137-assertion gate (~10 s) — run before every commit
 npm run dev       # Vite dev server (HMR)
 npm run build     # production bundle → dist/
 npm run preview   # serve the built dist/ locally
@@ -235,7 +235,7 @@ Pushes to `main` trigger `.github/workflows/deploy.yml`, which runs `npm ci` →
 `/RouletteTrainer/` project subpath. To host your own fork: enable **Settings → Pages → Source:
 GitHub Actions**.
 
-## What `verify` checks (133 assertions)
+## What `verify` checks (137 assertions)
 
 - **Exact structural invariants** of both wheels (38 / 37 pockets, no dupes; the real geometric
   property that every odd *n* sits opposite *n+1* and 0 opposite 00; 18 red per wheel; quadrant and
