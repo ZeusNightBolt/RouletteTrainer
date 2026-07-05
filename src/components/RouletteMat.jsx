@@ -70,24 +70,29 @@ function cellRectOf(n, american) {
   return { x: GX + c * CW, y: GY + r * CH, w: CW, h: CH };
 }
 
-// Dealer's dolly: a frosted translucent marker the dealer drops on the winning
-// number after the ball lands (the number still reads through it). Purely a
-// result marker — no bet, no click target.
+// Dealer's dolly — the tall standing marker a live dealer stands on the winning
+// number: a footed base, a fluted bottle body, and a knob on top. Upright and
+// opaque (not a flat disc), so it reads exactly like the marker on an Atlantic
+// City table. Purely a result marker — no bet, no click target.
 function DealerPuck({ cx, cy }) {
-  const rx = 13;
-  const ry = 4.6;
-  const h = 6.5; // half the cylinder body height
-  const top = cy - h;
-  const bot = cy + h;
   return (
     <g className="mat-puck" pointerEvents="none">
-      <ellipse cx={cx} cy={bot + 2.5} rx={rx + 3} ry={ry - 1} className="puck-shadow" />
+      {/* cast shadow on the felt */}
+      <ellipse cx={cx} cy={cy + 15} rx="10.5" ry="3" className="puck-shadow" />
+      {/* footed base */}
+      <ellipse cx={cx} cy={cy + 13} rx="9.5" ry="3.2" className="puck-base" />
+      {/* fluted bottle body — wide foot pinching to a neck */}
       <path
-        d={`M ${cx - rx} ${top} L ${cx - rx} ${bot} A ${rx} ${ry} 0 0 0 ${cx + rx} ${bot} L ${cx + rx} ${top} A ${rx} ${ry} 0 0 1 ${cx - rx} ${top} Z`}
+        d={`M ${cx - 7.5} ${cy + 13} C ${cx - 8} ${cy + 5} ${cx - 5.5} ${cy + 1} ${cx - 3.5} ${cy - 4} C ${cx - 2.8} ${cy - 6} ${cx - 2.8} ${cy - 7} ${cx - 2.8} ${cy - 8} L ${cx + 2.8} ${cy - 8} C ${cx + 2.8} ${cy - 7} ${cx + 2.8} ${cy - 6} ${cx + 3.5} ${cy - 4} C ${cx + 5.5} ${cy + 1} ${cx + 8} ${cy + 5} ${cx + 7.5} ${cy + 13} Z`}
         className="puck-body"
       />
-      <ellipse cx={cx} cy={top} rx={rx} ry={ry} className="puck-top" />
-      <ellipse cx={cx} cy={top - 1.4} rx={rx * 0.4} ry={ry * 0.42} className="puck-glint" />
+      {/* collar under the knob */}
+      <ellipse cx={cx} cy={cy - 8} rx="3.6" ry="1.5" className="puck-collar" />
+      {/* knob / head */}
+      <circle cx={cx} cy={cy - 11.5} r="4.8" className="puck-head" />
+      {/* highlights (glassy body streak + head glint) */}
+      <path d={`M ${cx - 2.6} ${cy + 9} C ${cx - 3} ${cy + 2} ${cx - 2} ${cy - 3} ${cx - 1.3} ${cy - 6}`} className="puck-shine" />
+      <circle cx={cx - 1.5} cy={cy - 13} r="1.4" className="puck-glint" />
     </g>
   );
 }

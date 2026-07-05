@@ -165,15 +165,18 @@ export default function Wheel({ wheelKey, lastIdx, stats, bets = {}, stakes = {}
 
       {/* ball — an OUTER group orbits it around the wheel (decelerating), an
           INNER group drops it radially from the ball-track into the pocket with
-          a couple of taps. Keyed on spinId so each spin restarts the sequence. */}
+          a couple of taps. Keyed on spinId so each spin restarts the sequence.
+          The orbit/drop animation only runs WHILE `spinning`; once the ball has
+          landed the same inline transforms hold it seated in the pocket, so
+          re-opening the wheel later just shows it resting — it never re-spins. */}
       {lastIdx != null && (
         <g
           key={spinId}
-          className="ball-orbit"
+          className={"ball-orbit" + (spinning ? " spinning" : "")}
           style={{ "--land": `${ballAngle}deg`, transform: `rotate(${ballAngle}deg)`, transformBox: "view-box", transformOrigin: `${C}px ${C}px` }}
         >
           <g
-            className="ball-drop"
+            className={"ball-drop" + (spinning ? " spinning" : "")}
             style={{ "--r-seat": `${-R_BALL}px`, "--r-track": `${-R_TRACK}px`, transform: `translateY(${-R_BALL}px)` }}
           >
             <circle cx={C} cy={C} r="7.5" className="ball" filter="url(#ballShadow)" />
