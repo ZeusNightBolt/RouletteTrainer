@@ -1,6 +1,6 @@
 import React from "react";
 import { WHEELS, colorOf, quadrantIndexOf } from "../wheels.js";
-import { chipClass } from "../ui.js";
+import { ChipDefs, PlacedChip } from "./Chip.jsx";
 
 // Geometry — 640 viewBox so the wheel renders larger and the outer betting
 // ring fits without clipping. The wheel is a betting surface: pockets take
@@ -36,17 +36,7 @@ function annular(r1, r2, a0, a1) {
 
 function ChipDot({ r, ang, amount }) {
   const [x, y] = polar(r, ang);
-  const label =
-    amount >= 1000 ? `${(amount / 1000).toFixed(amount % 1000 ? 1 : 0)}k` : Number.isInteger(amount) ? amount : amount.toFixed(1);
-  return (
-    <g className={"wchip " + chipClass(amount)}>
-      <circle cx={x} cy={y} r="13" />
-      <circle cx={x} cy={y} r="9.5" className="wchip-ring" />
-      <text x={x} y={y + 0.5} textAnchor="middle" dominantBaseline="middle">
-        {label}
-      </text>
-    </g>
-  );
+  return <PlacedChip cx={x} cy={y} r={13} amount={amount} />;
 }
 
 export default function Wheel({ wheelKey, lastIdx, stats, bets = {}, stakes = {}, onBet, spinId = 0, spinning = false, spinWord = "Rolling" }) {
@@ -66,6 +56,7 @@ export default function Wheel({ wheelKey, lastIdx, stats, bets = {}, stakes = {}
       aria-label={`${wheel.label} wheel betting surface, last result ${last ?? "none"}. Click a pocket for a straight-up bet, click the outer ring for a quadrant bet.`}
     >
       <defs>
+        <ChipDefs />
         <radialGradient id="hubGrad" cx="50%" cy="42%" r="72%">
           <stop offset="0%" stopColor="#1c2f23" />
           <stop offset="70%" stopColor="var(--felt-2)" />

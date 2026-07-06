@@ -15,7 +15,7 @@ export default function BetConsole({ chip, setChip, onUndo, onClear, canUndo, ha
             onClick={() => setChip(c)}
             title={`bet in $${c.toLocaleString()} chips`}
           >
-            {chipFace(c)}
+            <span className="chip-face">{chipFace(c)}</span>
           </button>
         ))}
       </div>

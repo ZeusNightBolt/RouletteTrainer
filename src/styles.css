@@ -621,31 +621,28 @@ button:focus-visible {
   stroke: var(--gold);
   stroke-width: 1.5;
 }
-.mat-chip circle {
-  fill: var(--gold);
-  stroke: rgba(0, 0, 0, 0.35);
-  stroke-width: 1;
+/* --- polished casino chip (shared by mat + wheel; SVG rendered in Chip.jsx) --- */
+.pchip-rim {
+  stroke: rgba(0, 0, 0, 0.45);
+  stroke-width: 0.75;
 }
-.mat-chip .mat-chip-ring {
-  fill: none;
-  stroke: rgba(255, 255, 255, 0.78);
-  stroke-width: 1;
-  stroke-dasharray: 3 2.4;
-}
-.mat-chip text {
+.pchip.chip-red .pchip-rim { fill: #6f0b20; }
+.pchip.chip-green .pchip-rim { fill: #0a4a27; }
+.pchip.chip-black .pchip-rim { fill: #0a0c10; }
+.pchip.chip-purple .pchip-rim { fill: #35164f; }
+.pchip.chip-orange .pchip-rim { fill: #85470a; }
+.pchip-spots { stroke: #f6f1e6; }            /* white edge spots */
+.pchip-inner { stroke: rgba(255, 255, 255, 0.5); stroke-width: 1; } /* face ring */
+.pchip-gloss { fill: rgba(255, 255, 255, 0.26); } /* top highlight */
+.pchip-text {
   font-family: var(--font-mono);
-  font-size: 10px;
   font-weight: 700;
   fill: #fff;
+  paint-order: stroke;
+  stroke: rgba(0, 0, 0, 0.28);
+  stroke-width: 0.5px;
 }
-/* Atlantic City chip colours (fill by the largest denomination in the stack) */
-.mat-chip.chip-red circle { fill: var(--chip-red); }
-.mat-chip.chip-green circle { fill: var(--chip-green); }
-.mat-chip.chip-black circle { fill: var(--chip-black); }
-.mat-chip.chip-purple circle { fill: var(--chip-purple); }
-.mat-chip.chip-orange circle { fill: var(--chip-orange); }
-.mat-chip.chip-orange text { fill: #2a1c00; }
-.mat-chip.chip-orange .mat-chip-ring { stroke: rgba(0, 0, 0, 0.5); }
+.pchip.chip-orange .pchip-text { fill: #2a1600; stroke: rgba(255, 255, 255, 0.35); }
 
 /* --- winning number: dealer puck + cell outline on the felt ------------------- */
 
@@ -1475,33 +1472,6 @@ button:focus-visible {
   font-size: 11px;
   font-weight: 700;
 }
-.wchip circle {
-  fill: var(--gold);
-  stroke: rgba(0, 0, 0, 0.4);
-  stroke-width: 1;
-}
-.wchip .wchip-ring {
-  fill: none;
-  stroke: rgba(255, 255, 255, 0.78);
-  stroke-width: 1;
-  stroke-dasharray: 3 2.6;
-}
-.wchip text {
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  font-weight: 700;
-  fill: #fff;
-}
-.wchip.chip-red circle { fill: var(--chip-red); }
-.wchip.chip-green circle { fill: var(--chip-green); }
-.wchip.chip-black circle { fill: var(--chip-black); }
-.wchip.chip-purple circle { fill: var(--chip-purple); }
-.wchip.chip-orange circle { fill: var(--chip-orange); }
-.wchip.chip-orange text { fill: #2a1c00; }
-.wchip.chip-orange .wchip-ring { stroke: rgba(0, 0, 0, 0.5); }
-.wchip {
-  pointer-events: none; /* clicks fall through to the pocket group */
-}
 .ball {
   fill: #f6f1e4;
   stroke: #0b1310;
@@ -1867,31 +1837,62 @@ button:focus-visible {
   align-items: center;
   gap: 7px;
 }
+/* selector chips — same casino look as the placed chips: domed colour, white
+   edge spots (::before, masked to the rim), an inner ring (::after), a glossy
+   highlight and depth from layered shadows. */
 .chip {
-  width: 36px;
-  height: 36px;
+  position: relative;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  border: 2px dashed rgba(255, 255, 255, 0.5);
+  border: none;
   background: var(--felt-2);
   color: #fff;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   display: grid;
   place-items: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5), inset 0 2px 3px rgba(255, 255, 255, 0.32), inset 0 -4px 6px rgba(0, 0, 0, 0.38);
   transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
-/* Atlantic City denominations */
-.chip.chip-red { background: var(--chip-red); }
-.chip.chip-green { background: var(--chip-green); }
-.chip.chip-black { background: var(--chip-black); }
-.chip.chip-purple { background: var(--chip-purple); }
-.chip.chip-orange { background: var(--chip-orange); color: #2a1c00; border-color: rgba(0, 0, 0, 0.4); }
+/* white edge spots on the rim */
+.chip::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: repeating-conic-gradient(#f6f1e6 0 13deg, transparent 13deg 30deg);
+  -webkit-mask: radial-gradient(circle, transparent 60%, #000 61%, #000 84%, transparent 85%);
+  mask: radial-gradient(circle, transparent 60%, #000 61%, #000 84%, transparent 85%);
+  opacity: 0.92;
+  pointer-events: none;
+}
+/* inner face ring */
+.chip::after {
+  content: "";
+  position: absolute;
+  inset: 26%;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  pointer-events: none;
+}
+.chip > .chip-face {
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);
+}
+/* Atlantic City denominations — domed radial gradients */
+.chip.chip-red { background: radial-gradient(circle at 36% 30%, #f0637a, #cf1d45 55%, #8c0f2a); }
+.chip.chip-green { background: radial-gradient(circle at 36% 30%, #5cc888, #1f9b52 55%, #0e5f31); }
+.chip.chip-black { background: radial-gradient(circle at 36% 30%, #565e69, #2b3139 55%, #14171d); }
+.chip.chip-purple { background: radial-gradient(circle at 36% 30%, #a878d6, #6d3a9c 55%, #431f66); }
+.chip.chip-orange { background: radial-gradient(circle at 36% 30%, #f8c072, #e2841f 55%, #a4560a); color: #2a1600; }
+.chip.chip-orange > .chip-face { text-shadow: 0 1px 1px rgba(255, 255, 255, 0.35); }
 /* selected chip lifts with a gold halo (keeps its own colour) */
 .chip.on {
-  outline: 2px solid var(--gold);
-  outline-offset: 2px;
-  box-shadow: 0 0 10px rgba(226, 183, 85, 0.6);
-  transform: translateY(-2px);
+  box-shadow: 0 0 0 2px var(--gold), 0 0 12px rgba(226, 183, 85, 0.65), 0 3px 6px rgba(0, 0, 0, 0.5),
+    inset 0 2px 3px rgba(255, 255, 255, 0.35);
+  transform: translateY(-3px);
 }
 .board-hint {
   font-size: 10.5px;

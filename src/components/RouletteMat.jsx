@@ -1,6 +1,6 @@
 import React from "react";
 import { WHEELS, RED } from "../wheels.js";
-import { chipClass } from "../ui.js";
+import { ChipDefs, PlacedChip as Chip } from "./Chip.jsx";
 
 // Vertical felt (portrait, like a live table viewed head-on and most mobile
 // roulette apps) as an SVG betting surface. Laid out to mirror a real Atlantic
@@ -44,20 +44,6 @@ const colorOf = (n) => (RED.has(n) ? "red" : "black");
 const numAt = (r, c) => 3 * r + c + 1;
 const iKey = (nums) => "i:" + [...nums].sort((a, b) => a - b).join("-");
 
-function Chip({ cx, cy, amount }) {
-  if (!amount) return null;
-  const label =
-    amount >= 1000 ? `${(amount / 1000).toFixed(amount % 1000 ? 1 : 0)}k` : Number.isInteger(amount) ? amount : amount.toFixed(1);
-  return (
-    <g className={"mat-chip " + chipClass(amount)} pointerEvents="none">
-      <circle cx={cx} cy={cy} r="12" />
-      <circle cx={cx} cy={cy} r="8.6" className="mat-chip-ring" />
-      <text x={cx} y={cy + 0.5} textAnchor="middle" dominantBaseline="middle">
-        {label}
-      </text>
-    </g>
-  );
-}
 
 // The rectangle of the cell for a given pocket, so the dealer puck can sit dead
 // centre on the winning number (0/00 live in the top row at half width).
@@ -163,6 +149,9 @@ export default function RouletteMat({ wheelKey, bets, onBet, winner = null }) {
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="mat" aria-label={`${wheel.label} vertical betting felt`}>
+      <defs>
+        <ChipDefs />
+      </defs>
       {/* 0 / 00 row on top */}
       {american ? (
         <>
