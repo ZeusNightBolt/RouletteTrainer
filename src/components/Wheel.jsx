@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { WHEELS, colorOf, quadrantIndexOf } from "../wheels.js";
 import { ChipDefs, PlacedChip } from "./Chip.jsx";
 
@@ -16,6 +16,52 @@ const R_CHIP = 205;
 const R_QIN = 286;
 const R_QOUT = 314;
 const R_QLBL = 300;
+const R_DOT = 10.5; // the ball itself — sized to seat cleanly in a pocket groove
+
+// Build a per-spin ballDrop keyframe track. A real ball rides the rim, peels off
+// as it slows, plunges once into the pocket zone, then RATTLES: it rebounds off
+// the frets a randomised 3–8 times, each hop gentler and (toward the very end)
+// closer together, before it finally seats. Randomising the tumble count spin to
+// spin — and spreading the settle over a longer, gentler window than a fixed
+// track — makes the stop read like a real wheel instead of a canned loop. Values
+// are expressed against the element's --r-seat / --r-track custom properties.
+function buildDropKeyframes(name, n) {
+  const peel = 0.575; // leaves the rim here and glides down (earlier = slower descent)
+  const firstContact = 0.7; // first plunge into the pocket zone
+  const end = 0.995;
+  const span = end - firstContact;
+
+  // time weights for the 2n hop intervals — shrinking so the early flips get the
+  // most time (unhurried) and the final taps buzz quickly to rest
+  const stops = 2 * n;
+  const gapDecay = 0.84;
+  const weights = [];
+  for (let i = 0, w = 1; i < stops; i++, w *= gapDecay) weights.push(w);
+  const totW = weights.reduce((a, b) => a + b, 0);
+
+  const OUT0 = 15; // first rebound out toward the rim (gentler than the old 25)
+  const IN0 = 8; // first deep overshoot into the pocket
+  const ampDecay = 0.6;
+  const up = "cubic-bezier(0.5,0,0.85,0.42)"; // accelerate off the fret, decelerate to apex
+  const down = "cubic-bezier(0.12,0.7,0.35,1)"; // gravity pulls it back into the pocket
+
+  const rows = [
+    `0%{transform:translateY(var(--r-track))}`,
+    `${(peel * 100).toFixed(1)}%{transform:translateY(calc(var(--r-track) + 3px));animation-timing-function:cubic-bezier(0.5,0,0.9,0.4)}`,
+    `${(firstContact * 100).toFixed(1)}%{transform:translateY(calc(var(--r-seat) + ${IN0}px));animation-timing-function:${down}}`,
+  ];
+  let t = firstContact;
+  for (let i = 0; i < n; i++) {
+    t += (span * weights[2 * i]) / totW;
+    const outAmp = Math.max(1.6, OUT0 * Math.pow(ampDecay, i));
+    rows.push(`${(t * 100).toFixed(1)}%{transform:translateY(calc(var(--r-seat) - ${outAmp.toFixed(1)}px));animation-timing-function:${up}}`);
+    t += (span * weights[2 * i + 1]) / totW;
+    const inAmp = Math.max(0.5, IN0 * Math.pow(ampDecay, i + 1));
+    rows.push(`${(t * 100).toFixed(1)}%{transform:translateY(calc(var(--r-seat) + ${inAmp.toFixed(1)}px));animation-timing-function:${down}}`);
+  }
+  rows.push(`100%{transform:translateY(var(--r-seat))}`);
+  return `@keyframes ${name}{${rows.join("")}}`;
+}
 
 const POCKET_FILL = { red: "var(--pocket-red)", black: "var(--pocket-black)", green: "var(--pocket-green)" };
 const Q_COLORS = ["var(--q1)", "var(--q2)", "var(--q3)", "var(--q4)"];
@@ -49,12 +95,21 @@ export default function Wheel({ wheelKey, lastIdx, stats, bets = {}, stakes = {}
   const lastColor = last ? colorOf(last) : null;
   const lastQ = lastIdx != null ? quadrantIndexOf(wheelKey, lastIdx) : -1;
 
+  // fresh random tumble count (3–8) per spin — cosmetic only, never touches the
+  // outcome. Keyed on spinId so it stays stable through re-renders of one spin.
+  const bounces = useMemo(() => 3 + Math.floor(Math.random() * 6), [spinId]);
+  const dropName = "bd" + spinId;
+  const dropKeyframes = useMemo(() => buildDropKeyframes(dropName, bounces), [dropName, bounces]);
+
   return (
     <svg
       viewBox="0 0 640 640"
       className="wheel"
       aria-label={`${wheel.label} wheel betting surface, last result ${last ?? "none"}. Click a pocket for a straight-up bet, click the outer ring for a quadrant bet.`}
     >
+      {/* per-spin drop track — a unique keyframe name (bd<spinId>) with a random
+          3–8 rattle, applied to the ball via inline animation-name below */}
+      <style>{dropKeyframes}</style>
       <defs>
         <ChipDefs />
         <radialGradient id="hubGrad" cx="50%" cy="42%" r="72%">
@@ -169,9 +224,15 @@ export default function Wheel({ wheelKey, lastIdx, stats, bets = {}, stakes = {}
         >
           <g
             className={"ball-drop" + (spinning ? " spinning" : "")}
-            style={{ "--r-seat": `${-R_BALL}px`, "--r-track": `${-R_TRACK}px`, transform: `translateY(${-R_BALL}px)` }}
+            style={{
+              "--r-seat": `${-R_BALL}px`,
+              "--r-track": `${-R_TRACK}px`,
+              transform: `translateY(${-R_BALL}px)`,
+              // per-spin randomised rattle; only while the ball is in flight
+              animationName: spinning ? dropName : undefined,
+            }}
           >
-            <circle cx={C} cy={C} r="7.5" className="ball" filter="url(#ballShadow)" />
+            <circle cx={C} cy={C} r={R_DOT} className="ball" filter="url(#ballShadow)" />
           </g>
         </g>
       )}
