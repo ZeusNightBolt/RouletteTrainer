@@ -109,6 +109,8 @@ const cases = [
   ["street 1-2-3 (11:1)    (00 wheel)", "american", { "i:1-2-3": 1 }, {}, -5.263, 0.6, 900_000, 32],
   ["corner 1-2-4-5 (8:1)   (00 wheel)", "american", { "i:1-2-4-5": 1 }, {}, -5.263, 0.6, 900_000, 33],
   ["six-line 1..6 (5:1)    (00 wheel)", "american", { "i:1-2-3-4-5-6": 1 }, {}, -5.263, 0.5, 900_000, 34],
+  ["split 0-00  (17:1)     (00 wheel)", "american", { "i:0-00": 1 }, {}, -5.263, 0.7, 1_000_000, 99],
+  ["trio 00-2-3 (11:1)     (00 wheel)", "american", { "i:2-3-00": 1 }, {}, -5.263, 0.6, 900_000, 42],
   ["split 1-2  (17:1)       (0 wheel)", "european", { "i:1-2": 1 }, {}, -2.703, 0.7, 1_000_000, 35],
   ["corner 1-2-4-5 (8:1)    (0 wheel)", "european", { "i:1-2-4-5": 1 }, {}, -2.703, 0.6, 900_000, 36],
   ["straight 17             (0 wheel)", "european", { "s:17": 1 }, {}, -2.703, 1.2, 1_500_000, 19],
@@ -156,6 +158,8 @@ const evCases = [
   ["street 1-2-3         (00 wheel)", "american", { "i:1-2-3": 1 }, {}, -100 / 19],
   ["corner 1-2-4-5       (00 wheel)", "american", { "i:1-2-4-5": 1 }, {}, -100 / 19],
   ["six-line 1..6        (00 wheel)", "american", { "i:1-2-3-4-5-6": 1 }, {}, -100 / 19],
+  ["split 0-00           (00 wheel)", "american", { "i:0-00": 1 }, {}, -100 / 19],
+  ["trio 00-2-3          (00 wheel)", "american", { "i:2-3-00": 1 }, {}, -100 / 19],
   ["split 1-2             (0 wheel)", "european", { "i:1-2": 1 }, {}, -100 / 37],
   ["red, half-back ON    (00 wheel)", "american", { "e:red": 1 }, { halfBack: true }, -100 / 38],
   ["red, half-back OFF   (00 wheel)", "american", { "e:red": 1 }, { halfBack: false }, -200 / 38],
@@ -191,6 +195,17 @@ for (const [label, wheelKey, bets, opts, theory] of evCases) {
   ok(resolve({ "i:1-2-4-5": 8 }, { wheelKey: "american", n: "5" }).returned === 72, "corner 1-2-4-5 pays 9× when 5 hits (8:1)");
   ok(resolve({ "i:1-2-3-4-5-6": 12 }, { wheelKey: "american", n: "6" }).returned === 72, "six-line 1..6 pays 6× when 6 hits (5:1)");
   ok(resolve({ "i:1-2": 10 }, { wheelKey: "american", n: "0" }).returned === 0, "inside bet loses on 0");
+  // zero-covering inside bets now resolve (the 0-00 split + trios)
+  ok(resolve({ "i:0-00": 10 }, { wheelKey: "american", n: "0" }).returned === 180, "split 0-00 pays 18× when 0 hits (17:1)");
+  ok(resolve({ "i:0-00": 10 }, { wheelKey: "american", n: "00" }).returned === 180, "split 0-00 pays 18× when 00 hits");
+  ok(resolve({ "i:0-00": 10 }, { wheelKey: "american", n: "7" }).returned === 0, "split 0-00 loses on a numbered pocket");
+  ok(resolve({ "i:2-3-00": 12 }, { wheelKey: "american", n: "00" }).returned === 144, "trio 00-2-3 pays 12× when 00 hits (11:1)");
+  ok(resolve({ "i:2-3-00": 12 }, { wheelKey: "american", n: "2" }).returned === 144, "trio 00-2-3 pays 12× when 2 hits");
+  // per-pocket split conservation includes the zeros
+  {
+    const ps = pocketStakes({ "i:0-00": 10 }, "american");
+    ok(ps.stakes["0"] === 5 && ps.stakes["00"] === 5 && Math.abs(ps.total - 10) < 1e-9, "pocketStakes splits a 0-00 bet $5/$5 across the two zeros");
+  }
 }
 
 // Per-pocket stake distribution — the "split amount" shown on the wheel. Real

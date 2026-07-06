@@ -1,5 +1,6 @@
 import React from "react";
 import { WHEELS, colorOf, quadrantIndexOf } from "../wheels.js";
+import { chipClass } from "../ui.js";
 
 // Geometry — 640 viewBox so the wheel renders larger and the outer betting
 // ring fits without clipping. The wheel is a betting surface: pockets take
@@ -38,7 +39,7 @@ function ChipDot({ r, ang, amount }) {
   const label =
     amount >= 1000 ? `${(amount / 1000).toFixed(amount % 1000 ? 1 : 0)}k` : Number.isInteger(amount) ? amount : amount.toFixed(1);
   return (
-    <g className="wchip">
+    <g className={"wchip " + chipClass(amount)}>
       <circle cx={x} cy={y} r="13" />
       <circle cx={x} cy={y} r="9.5" className="wchip-ring" />
       <text x={x} y={y + 0.5} textAnchor="middle" dominantBaseline="middle">

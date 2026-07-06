@@ -34,7 +34,7 @@
 
 ```bash
 npm install
-npm run verify    # 137-assertion gate (~10 s)
+npm run verify    # 147-assertion gate (~10 s)
 npm run dev       # Vite dev server
 npm run build     # production bundle → dist/
 npm run preview   # serve dist/
@@ -46,7 +46,8 @@ npm run preview   # serve dist/
 index.html                    dark-root shell, fonts, inline SVG roulette-wheel favicon (data-URI)
 src/main.jsx                  entry
 src/ui.js                     shared UI constants + formatters (SPIN_MS, RESULT_HOLD_MS, SPIN_WORDS,
-                              Q_CLASS, CHIPS, fmt/signed/pct)
+                              Q_CLASS, CHIPS [AC colours: $5 red…$1000 orange] + chipClass/chipFace,
+                              fmt/signed/pct)
 src/App.jsx                   state (wheel, bets + undo stack, bankroll, history, log, settled result)
                               + flow: vertical MAT + banner → SPIN flips to WHEEL → auto-reverts
                               to felt and PAUSES on the result (dealer puck on the winning number +

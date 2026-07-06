@@ -27,6 +27,13 @@
   --q4: #2dd4bf;
   --cold: #ff5470;
 
+  /* Atlantic City chip colours: $5 red · $25 green · $100 black · $500 purple · $1000 orange */
+  --chip-red: #c9302c;
+  --chip-green: #1f8b4c;
+  --chip-black: #17171b;
+  --chip-purple: #6d3a9c;
+  --chip-orange: #e0821e;
+
   --font-display: "Saira Condensed", "Arial Narrow", sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
 }
@@ -533,10 +540,25 @@ button:focus-visible {
   font-weight: 700;
   font-size: 19px;
   line-height: 1.05;
+  white-space: nowrap; /* keep the −$ sign glued to its number */
 }
 .banner-v.streak-red { color: #ff6d5f; }
 .banner-v.streak-black { color: var(--bone); }
 .banner-v.streak-green { color: #3bda8d; }
+
+/* Harden every atomic money / signed-number readout project-wide: a formatted
+   value like "−$1,234" or "−5.26%" must never wrap its sign onto a second row. */
+.bank-val,
+.rb-net,
+.rec-total-v,
+.rec-amt,
+.an-v,
+.lab-v,
+.big,
+.ac-rb-v,
+.ac-cur-num {
+  white-space: nowrap;
+}
 
 .mat-wrap {
   display: flex;
@@ -601,12 +623,12 @@ button:focus-visible {
 }
 .mat-chip circle {
   fill: var(--gold);
-  stroke: var(--gold-ink);
+  stroke: rgba(0, 0, 0, 0.35);
   stroke-width: 1;
 }
 .mat-chip .mat-chip-ring {
   fill: none;
-  stroke: var(--gold-ink);
+  stroke: rgba(255, 255, 255, 0.78);
   stroke-width: 1;
   stroke-dasharray: 3 2.4;
 }
@@ -614,8 +636,16 @@ button:focus-visible {
   font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 700;
-  fill: var(--gold-ink);
+  fill: #fff;
 }
+/* Atlantic City chip colours (fill by the largest denomination in the stack) */
+.mat-chip.chip-red circle { fill: var(--chip-red); }
+.mat-chip.chip-green circle { fill: var(--chip-green); }
+.mat-chip.chip-black circle { fill: var(--chip-black); }
+.mat-chip.chip-purple circle { fill: var(--chip-purple); }
+.mat-chip.chip-orange circle { fill: var(--chip-orange); }
+.mat-chip.chip-orange text { fill: #2a1c00; }
+.mat-chip.chip-orange .mat-chip-ring { stroke: rgba(0, 0, 0, 0.5); }
 
 /* --- winning number: dealer puck + cell outline on the felt ------------------- */
 
@@ -1447,12 +1477,12 @@ button:focus-visible {
 }
 .wchip circle {
   fill: var(--gold);
-  stroke: var(--gold-ink);
+  stroke: rgba(0, 0, 0, 0.4);
   stroke-width: 1;
 }
 .wchip .wchip-ring {
   fill: none;
-  stroke: var(--gold-ink);
+  stroke: rgba(255, 255, 255, 0.78);
   stroke-width: 1;
   stroke-dasharray: 3 2.6;
 }
@@ -1460,8 +1490,15 @@ button:focus-visible {
   font-family: var(--font-mono);
   font-size: 10.5px;
   font-weight: 700;
-  fill: var(--gold-ink);
+  fill: #fff;
 }
+.wchip.chip-red circle { fill: var(--chip-red); }
+.wchip.chip-green circle { fill: var(--chip-green); }
+.wchip.chip-black circle { fill: var(--chip-black); }
+.wchip.chip-purple circle { fill: var(--chip-purple); }
+.wchip.chip-orange circle { fill: var(--chip-orange); }
+.wchip.chip-orange text { fill: #2a1c00; }
+.wchip.chip-orange .wchip-ring { stroke: rgba(0, 0, 0, 0.5); }
 .wchip {
   pointer-events: none; /* clicks fall through to the pocket group */
 }
@@ -1834,18 +1871,27 @@ button:focus-visible {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  border: 2px dashed var(--line);
+  border: 2px dashed rgba(255, 255, 255, 0.5);
   background: var(--felt-2);
-  color: var(--bone);
+  color: #fff;
   font-size: 11.5px;
-  font-weight: 600;
+  font-weight: 700;
   display: grid;
   place-items: center;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
+/* Atlantic City denominations */
+.chip.chip-red { background: var(--chip-red); }
+.chip.chip-green { background: var(--chip-green); }
+.chip.chip-black { background: var(--chip-black); }
+.chip.chip-purple { background: var(--chip-purple); }
+.chip.chip-orange { background: var(--chip-orange); color: #2a1c00; border-color: rgba(0, 0, 0, 0.4); }
+/* selected chip lifts with a gold halo (keeps its own colour) */
 .chip.on {
-  background: var(--gold);
-  border: 2px dashed var(--gold-ink);
-  color: var(--gold-ink);
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  box-shadow: 0 0 10px rgba(226, 183, 85, 0.6);
+  transform: translateY(-2px);
 }
 .board-hint {
   font-size: 10.5px;
