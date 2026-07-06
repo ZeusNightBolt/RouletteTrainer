@@ -43,7 +43,10 @@ npm run preview   # serve dist/
 ## File map
 
 ```
-index.html                    dark-root shell, fonts, inline SVG roulette-wheel favicon (data-URI)
+index.html                    dark-root shell, fonts, title "Roulette Trainer 🎮", roulette-wheel
+                              favicon (public/favicon.svg + roulette-icon.png) + OG/Twitter share tags
+public/                       static assets copied to the site root: favicon.svg + roulette-icon.png
+                              (512² PNG for og:image / apple-touch-icon; same wheel as RouletteMark)
 src/main.jsx                  entry
 src/ui.js                     shared UI constants + formatters (SPIN_MS, RESULT_HOLD_MS, SPIN_WORDS,
                               Q_CLASS, CHIPS [AC colours: $5 red…$1000 orange] + chipClass/chipFace,
