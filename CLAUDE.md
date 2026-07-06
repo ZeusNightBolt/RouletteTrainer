@@ -67,8 +67,12 @@ src/components/RouletteMat.jsx VERTICAL AC-felt betting surface: even-money outs
                               split/street/corner/six-line hotspots + basket; + dealer puck (dolly) on
                               the winning number after a spin (winner prop)
 src/components/Wheel.jsx      SVG wheel AS betting surface (pockets = straight-up, ring = sector);
-                              ball orbits + drops/taps into the pocket (result hidden until it lands,
-                              gated by App's `spinning`), then shows per-pocket split amounts + highlight
+                              ball orbits + drops into the pocket (result hidden until it lands,
+                              gated by App's `spinning`), then shows per-pocket split amounts + highlight.
+                              Drop TRACK is generated per spin (buildDropKeyframes) with a randomised 3–8
+                              rail-tumbles + a gentler/longer settle, injected as an SVG <style> and
+                              selected via inline animation-name bd<spinId>. On mobile the wheel view
+                              zooms edge-to-edge + collapses dead felt (styles.css :has(.wheel-wrap))
 src/components/BetConsole.jsx chip selector + undo/clear, docked above the mat/wheel
 src/components/StatsBanner.jsx compact session banner (spins / P&L / hit rate / streak) above the mat
 src/components/ResultBar.jsx  paused-result bar over the felt: landed number/colour/sector + net this
