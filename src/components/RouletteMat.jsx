@@ -1,5 +1,6 @@
 import React from "react";
 import { WHEELS, RED } from "../wheels.js";
+import { ChipDefs, PlacedChip as Chip } from "./Chip.jsx";
 
 // Vertical felt (portrait, like a live table viewed head-on and most mobile
 // roulette apps) as an SVG betting surface. Laid out to mirror a real Atlantic
@@ -43,20 +44,6 @@ const colorOf = (n) => (RED.has(n) ? "red" : "black");
 const numAt = (r, c) => 3 * r + c + 1;
 const iKey = (nums) => "i:" + [...nums].sort((a, b) => a - b).join("-");
 
-function Chip({ cx, cy, amount }) {
-  if (!amount) return null;
-  const label =
-    amount >= 1000 ? `${(amount / 1000).toFixed(amount % 1000 ? 1 : 0)}k` : Number.isInteger(amount) ? amount : amount.toFixed(1);
-  return (
-    <g className="mat-chip" pointerEvents="none">
-      <circle cx={cx} cy={cy} r="12" />
-      <circle cx={cx} cy={cy} r="8.6" className="mat-chip-ring" />
-      <text x={cx} y={cy + 0.5} textAnchor="middle" dominantBaseline="middle">
-        {label}
-      </text>
-    </g>
-  );
-}
 
 // The rectangle of the cell for a given pocket, so the dealer puck can sit dead
 // centre on the winning number (0/00 live in the top row at half width).
@@ -139,8 +126,32 @@ export default function RouletteMat({ wheelKey, bets, onBet, winner = null }) {
     }
   }
 
+  // zero-adjacent inside bets. Pockets are matched by literal token, so anything
+  // that covers a zero resolves like any other inside bet.
+  //   • 0-00 split (american) — the line between the two zeros
+  //   • zeros ↔ row-1 splits — the boundary line under each zero
+  //   • trios — the corners where a zero meets two of row 1
+  if (american) {
+    pushRect("i:0-00", GX + GRID_W / 2, ZH / 2, 18, ZH * 0.55, "Split 0-00 · 17:1"); // between the two zeros
+    pushRect("i:0-1", GX + 0.5 * CW, GY, CW * 0.42, 14, "Split 0-1 · 17:1"); // 0 above number 1
+    pushRect("i:0-2", GX + 1.25 * CW, GY, CW * 0.36, 14, "Split 0-2 · 17:1"); // 0 above the left of 2
+    pushRect("i:2-00", GX + 1.75 * CW, GY, CW * 0.36, 14, "Split 00-2 · 17:1"); // 00 above the right of 2
+    pushRect("i:3-00", GX + 2.5 * CW, GY, CW * 0.42, 14, "Split 00-3 · 17:1"); // 00 above number 3
+    pushDot("i:0-1-2", GX + CW, GY, 9, "Trio 0-1-2 · 11:1");
+    pushDot("i:2-3-00", GX + 2 * CW, GY, 9, "Trio 00-2-3 · 11:1");
+  } else {
+    pushRect("i:0-1", GX + 0.5 * CW, GY, CW * 0.42, 14, "Split 0-1 · 17:1");
+    pushRect("i:0-2", GX + 1.5 * CW, GY, CW * 0.42, 14, "Split 0-2 · 17:1");
+    pushRect("i:0-3", GX + 2.5 * CW, GY, CW * 0.42, 14, "Split 0-3 · 17:1");
+    pushDot("i:0-1-2", GX + CW, GY, 9, "Trio 0-1-2 · 11:1");
+    pushDot("i:0-2-3", GX + 2 * CW, GY, 9, "Trio 0-2-3 · 11:1");
+  }
+
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="mat" aria-label={`${wheel.label} vertical betting felt`}>
+      <defs>
+        <ChipDefs />
+      </defs>
       {/* 0 / 00 row on top */}
       {american ? (
         <>

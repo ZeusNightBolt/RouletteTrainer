@@ -1,7 +1,7 @@
 # 🎡 Quadrant — Atlantic City Roulette Trainer
 
 [![▶ Play live](https://img.shields.io/badge/▶_Play-live-e2b755?style=for-the-badge)](https://zeusnightbolt.github.io/RouletteTrainer/)
-[![verify](https://img.shields.io/badge/verify-137_assertions-3bda8d?style=for-the-badge)](test/verify.js)
+[![verify](https://img.shields.io/badge/verify-147_assertions-3bda8d?style=for-the-badge)](test/verify.js)
 [![License: MIT](https://img.shields.io/badge/License-MIT-45a8ff?style=for-the-badge)](LICENSE)
 
 ![React](https://img.shields.io/badge/React_18-20232A?logo=react&logoColor=61DAFB)
@@ -47,7 +47,7 @@ Every inside bet covering *k* numbers pays the fair `36/k`-for-one ratio, so the
 
 ```bash
 npm install
-npm run verify    # 137-assertion gate (~10 s) — run before every commit
+npm run verify    # 147-assertion gate (~10 s) — run before every commit
 npm run dev       # Vite dev server (HMR)
 npm run build     # production bundle → dist/
 npm run preview   # serve the built dist/ locally
@@ -57,7 +57,7 @@ npm run preview   # serve the built dist/ locally
 
 The pure, DOM-free **`src/engine.js`** + **`src/wheels.js`** (single source of truth) power **both** the React UI and the Node `verify` gate — *the same code that pays the table is the code CI checks.* Spins use `crypto.getRandomValues` with **rejection sampling** (a seeded `mulberry32` PRNG is used only in tests). The wheel and felt are **hand-rolled SVG** from geometry; styling is **plain CSS** variables (no Tailwind); runtime deps are **React + ReactDOM only**.
 
-`verify` (137 assertions) checks: exact wheel geometry (38/37 pockets, odd-opposite-even, 0-opposite-00), Monte-Carlo house edges vs theory for **every** bet type, closed-form EV to `1e-9`, per-pocket stake conservation, and the **gambler's-fallacy null** (coldest ≈ fixed ≈ random quadrant over 600 000 spins). Pushes to `main` run `verify → build → deploy-pages`; a drifted payout fails the gate and blocks the deploy.
+`verify` (147 assertions) checks: exact wheel geometry (38/37 pockets, odd-opposite-even, 0-opposite-00), Monte-Carlo house edges vs theory for **every** bet type, closed-form EV to `1e-9`, per-pocket stake conservation, and the **gambler's-fallacy null** (coldest ≈ fixed ≈ random quadrant over 600 000 spins). Pushes to `main` run `verify → build → deploy-pages`; a drifted payout fails the gate and blocks the deploy.
 
 Contributor rules live in [`CLAUDE.md`](CLAUDE.md) — new bet types ship **verification-first** (resolution → closed-form edge → Monte-Carlo assertion → `verify` passes → *then* wire the UI), and nothing in the spin path may read history.
 

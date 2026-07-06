@@ -121,9 +121,12 @@ export function resolve(bets, outcome, opts = {}) {
     } else if (t === "i") {
       // Inside multi-number bet — split (2), street/trio (3), corner (4),
       // six-line (6). Numbers are hyphen-joined. Every one of these pays the
-      // fair "36/k for one" ratio, so a hit returns amount * 36/k.
+      // fair "36/k for one" ratio, so a hit returns amount * 36/k. The pockets
+      // are matched by their literal token ("0" / "00" included), so a bet that
+      // covers a zero — e.g. the 0-00 split "i:0-00" — resolves correctly; a
+      // zero outcome simply doesn't appear in an all-numbered bet's token list.
       const nums = sel.split("-");
-      if (!isZero && nums.includes(outcome.n)) ret = amount * (36 / nums.length);
+      if (nums.includes(outcome.n)) ret = amount * (36 / nums.length);
     } else if (t === "q") {
       const q = wheel.quadrants[Number(sel)];
       const m = q.end - q.start + 1;

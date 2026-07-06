@@ -42,8 +42,23 @@ export const pickSpinWord = () => SPIN_WORDS[Math.floor(Math.random() * SPIN_WOR
 // quadrant → CSS class (palette lives in styles.css: --q1..--q4)
 export const Q_CLASS = ["q1", "q2", "q3", "q4"];
 
-// chip denominations offered by the bet console
-export const CHIPS = [1, 5, 25, 100, 500];
+// chip denominations offered by the bet console, in Atlantic City colours:
+// $5 red · $25 green · $100 black · $500 purple · $1000 orange.
+export const CHIPS = [5, 25, 100, 500, 1000];
+
+// AC chip colour tiers, high → low. chipClass() returns the colour for an
+// arbitrary bet total (the largest chip that fits it — how a real stack reads).
+const CHIP_TIERS = [
+  { min: 1000, cls: "chip-orange" },
+  { min: 500, cls: "chip-purple" },
+  { min: 100, cls: "chip-black" },
+  { min: 25, cls: "chip-green" },
+  { min: 0, cls: "chip-red" },
+];
+export const chipClass = (amount) => (CHIP_TIERS.find((t) => amount >= t.min) || CHIP_TIERS[CHIP_TIERS.length - 1]).cls;
+
+// short chip face label: 1000 → "1K", else the number
+export const chipFace = (amount) => (amount >= 1000 ? `${amount / 1000}K` : String(amount));
 
 // "$1,234.5" / "−$50" — money, cents only when needed
 export const fmt = (n) =>
