@@ -62,6 +62,7 @@ export default function App() {
 
   function switchWheel(key) {
     if (key === wheelKey) return;
+    if (spinning) return; // the stake is already committed — no switching while the ball is in flight
     setWheelKey(key);
     setBets({});
     setBetStack([]);
@@ -145,8 +146,10 @@ export default function App() {
 
     // Phase 1 — start the animation. Only `lastOut` (where the ball lands) is set
     // now, so the wheel can spin to the right pocket. The result is NOT committed
-    // to history/records/bankroll/log yet, so the board, banner, telemetry, and
-    // bankroll all stay on the previous state until the ball actually lands.
+    // to history/records/log yet — but the STAKE leaves the bankroll right now:
+    // "no more bets" — once the ball is in flight the wager is committed, exactly
+    // like a live table (chips on the felt stay free to edit until this moment).
+    setBank((b) => b - res.staked);
     setLastOut(out);
     setSpinId((s) => s + 1);
     setSpinWord(pickSpinWord());
@@ -163,7 +166,8 @@ export default function App() {
     clearTimers();
     timers.current.push(
       setTimeout(() => {
-        setBank((b) => b - res.staked + res.returned);
+        setBank((b) => b + res.returned); // stake already left at spin start
+
         setHistory((h) => [...h, { n: out.n, idx: out.idx, q: out.q, color: out.color }]);
         setRecords((r) => [...r, { staked: res.staked, returned: res.returned, net: res.net, ev }]);
         setSpinning(false);

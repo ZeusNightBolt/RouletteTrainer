@@ -28,6 +28,7 @@ The answer, **asserted in CI on every deploy, is _no_.** Nothing on screen ever 
 
 - 🎯 **Real Atlantic City felt** — vertical layout with even-money bets + dozens down the left, the 1–36 grid, and geometry-derived straight / split / street / corner / six-line / basket hotspots. Tap to bet, **double-tap a tile to clear it**.
 - 🎡 **Animated wheel** — a crypto-random spin; the ball rides the track, taps across the frets, and seats in the pocket (result hidden until it lands). Then a **dealer dolly** and a **net-this-round bar** pause on the felt, just like a live table.
+- 💸 **"No more bets" wager timing** — chips on the felt stay freely movable (undo, clear, double-tap) and are **never charged** until you spin; the instant the ball is in flight the **stake leaves the bankroll**, and the landing credits the return — exactly the cadence of a live table. Wheel switching locks mid-spin.
 - 📊 **Telemetry** — live per-quadrant *and* per-colour drought, hit share, streaks, and a **χ² goodness-of-fit** test against the *true* 9/38 – 10/38 expectation.
 - 📈 **Analytics** — your realized P&L drawn against the **exact-EV** line, plus edge, hit rate, max drawdown, and streaks.
 - 🔍 **Analyze** — paste any result log → quadrant / colour / χ² breakdown, a **frequency wheel**, and momentum / mean-reversion **bet suggestions** (incl. hot & cold *quadrant sectors* + edge numbers) — all clearly flagged *pattern-play, not an edge*.
